@@ -1,0 +1,34 @@
+# Node modules
+node_modules/
+/.pnp
+.pnp.js
+
+# Testing
+/coverage
+
+# Next.js build
+/.next/
+/out/
+
+# Production
+/build
+
+# Misc
+.DS_Store
+*.pem
+
+# Local env files
+.env*.local
+.env
+
+# TypeScript
+*.tsbuildinfo
+next-env.d.ts
+
+# Drizzle
+/drizzle/.cache
+
+# Logs
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
