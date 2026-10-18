@@ -14,7 +14,8 @@
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio",
     "db:seed": "node --loader tsx/esm scripts/seed.ts",
-    "qr:generate": "node --loader tsx/esm scripts/generate-qr.ts"
+    "qr:generate": "node --loader tsx/esm scripts/generate-qr.ts",
+    "worker": "node --loader tsx/esm scripts/worker.ts"
   },
   "dependencies": {
     "argon2": "^0.41.1",

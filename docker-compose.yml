@@ -1,0 +1,89 @@
+services:
+  web:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/washflow
+      - REDIS_URL=redis://redis:6379
+      - SESSION_SECRET=e93c12f49226cfd5958ba81247b9bfda51921c56ad4feea48231c53e02bf092e
+      - DEVICE_FINGERPRINT_SECRET=d7a1c3f59e2182b834e9185a86df0473918f0a382103a891f759c84e1b4d0812
+      - ADMIN_EMAIL=admin@washflow.co.ke
+      - ADMIN_PASSWORD=WashFlow#Admin2026!Secure
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - washflow-network
+
+  worker:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    command: ["npm", "run", "worker"]
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_APP_URL=http://localhost:3000
+      - DATABASE_URL=postgresql://postgres:postgres@postgres:5432/washflow
+      - REDIS_URL=redis://redis:6379
+      - SESSION_SECRET=e93c12f49226cfd5958ba81247b9bfda51921c56ad4feea48231c53e02bf092e
+      - DEVICE_FINGERPRINT_SECRET=d7a1c3f59e2182b834e9185a86df0473918f0a382103a891f759c84e1b4d0812
+      - ADMIN_EMAIL=admin@washflow.co.ke
+      - ADMIN_NOTIFY_PHONE=+254700000000
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - washflow-network
+
+  postgres:
+    image: postgres:16-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: washflow
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d washflow"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - washflow-network
+
+  redis:
+    image: redis:7-alpine
+    restart: unless-stopped
+    ports:
+      - "6379:6379"
+    volumes:
+      - redisdata:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
+    networks:
+      - washflow-network
+
+volumes:
+  pgdata:
+  redisdata:
+
+networks:
+  washflow-network:
+    driver: bridge
