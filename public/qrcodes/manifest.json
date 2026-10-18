@@ -1,0 +1,61 @@
+{
+  "generatedAt": "2026-10-18T19:34:47.676Z",
+  "posters": [
+    {
+      "id": "poster-nairobi-cbd",
+      "name": "Nairobi CBD - Moi Avenue Hub",
+      "url": "http://localhost:3000/book?src=poster-nairobi-cbd",
+      "svgFile": "/qrcodes/poster-nairobi-cbd.svg",
+      "pngFile": "/qrcodes/poster-nairobi-cbd.png"
+    },
+    {
+      "id": "poster-westlands",
+      "name": "Westlands - Sarit Centre Vicinity",
+      "url": "http://localhost:3000/book?src=poster-westlands",
+      "svgFile": "/qrcodes/poster-westlands.svg",
+      "pngFile": "/qrcodes/poster-westlands.png"
+    },
+    {
+      "id": "poster-kilimani",
+      "name": "Kilimani - Yaya Centre Area",
+      "url": "http://localhost:3000/book?src=poster-kilimani",
+      "svgFile": "/qrcodes/poster-kilimani.svg",
+      "pngFile": "/qrcodes/poster-kilimani.png"
+    },
+    {
+      "id": "poster-kileleshwa",
+      "name": "Kileleshwa - Kasuku Centre",
+      "url": "http://localhost:3000/book?src=poster-kileleshwa",
+      "svgFile": "/qrcodes/poster-kileleshwa.svg",
+      "pngFile": "/qrcodes/poster-kileleshwa.png"
+    },
+    {
+      "id": "poster-ngong-rd",
+      "name": "Ngong Road - Junction Mall",
+      "url": "http://localhost:3000/book?src=poster-ngong-rd",
+      "svgFile": "/qrcodes/poster-ngong-rd.svg",
+      "pngFile": "/qrcodes/poster-ngong-rd.png"
+    },
+    {
+      "id": "poster-thika-rd",
+      "name": "Thika Road - Garden City",
+      "url": "http://localhost:3000/book?src=poster-thika-rd",
+      "svgFile": "/qrcodes/poster-thika-rd.svg",
+      "pngFile": "/qrcodes/poster-thika-rd.png"
+    },
+    {
+      "id": "poster-roysambu",
+      "name": "Roysambu - TRM Walkway",
+      "url": "http://localhost:3000/book?src=poster-roysambu",
+      "svgFile": "/qrcodes/poster-roysambu.svg",
+      "pngFile": "/qrcodes/poster-roysambu.png"
+    },
+    {
+      "id": "poster-south-b",
+      "name": "South B - Plainsview Gate",
+      "url": "http://localhost:3000/book?src=poster-south-b",
+      "svgFile": "/qrcodes/poster-south-b.svg",
+      "pngFile": "/qrcodes/poster-south-b.png"
+    }
+  ]
+}
