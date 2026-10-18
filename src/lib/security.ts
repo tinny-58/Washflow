@@ -2,7 +2,7 @@ import { createHmac, createHash, randomUUID } from "crypto";
 import { cookies, headers } from "next/headers";
 import { db } from "../db";
 import { users, bookings } from "../db/schema";
-import { eq, and, notIn, sql } from "drizzle-orm";
+import { eq, and, notInArray, sql } from "drizzle-orm";
 import { env } from "./env";
 
 const DEVICE_COOKIE_NAME = "wf_did";
@@ -108,7 +108,7 @@ export async function checkOpenBookingsLimit(
     .where(
       and(
         sql`(${bookings.customerId} = ${customerId} OR ${bookings.deviceFingerprint} = ${deviceFingerprint})`,
-        notIn(bookings.status, closedStatuses)
+        notInArray(bookings.status, [...closedStatuses])
       )
     );
 

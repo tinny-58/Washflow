@@ -46,6 +46,7 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
+  serverExternalPackages: ["bullmq", "ioredis", "pg", "argon2"],
   async headers() {
     return [
       {

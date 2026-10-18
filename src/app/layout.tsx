@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import "./globals.css";
 import { VideoBackground } from "@/components/shared/video-background";
 import { Navbar } from "@/components/shared/navbar";
@@ -7,7 +7,13 @@ export const metadata: Metadata = {
   title: "WashFlow | Fast, Crisp & Professional Laundry Service",
   description:
     "Scan, book in under 30 seconds, and get your clothes, duvets, and mats fresh and crisply delivered to your doorstep.",
-  viewport: "width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no",
+};
+
+export const viewport: Viewport = {
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 1,
+  userScalable: false,
 };
 
 export default function RootLayout({

@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useEffect, useState, use } from "react";
+import React, { useEffect, useState, use, Suspense } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   Sparkles,
@@ -20,7 +20,7 @@ import { CatalogSelector } from "@/components/customer/catalog-selector";
 import { StickyCtaBar } from "@/components/customer/sticky-cta-bar";
 import { PriceCatalogItem } from "@/db/schema";
 
-export default function BookPage() {
+function BookContent() {
   const router = useRouter();
   const searchParams = useSearchParams();
   const posterSrc = searchParams.get("src") || null;
@@ -471,5 +471,19 @@ export default function BookPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function BookPage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="flex-1 flex items-center justify-center p-8">
+          <div className="w-8 h-8 rounded-full border-2 border-sky-400 border-t-transparent animate-spin" />
+        </div>
+      }
+    >
+      <BookContent />
+    </Suspense>
   );
 }
