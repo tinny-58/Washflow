@@ -23,8 +23,6 @@ import {
   consumeVerificationToken,
 } from "../lib/otp";
 import { maskPhone } from "../lib/otp/delivery-provider";
-import { checkNumberOnWhatsApp } from "../lib/baileys/queue";
-import { baileysService } from "../lib/baileys/baileys-service";
 import {
   createSession,
   createPreauthSession,
@@ -81,7 +79,7 @@ router.post("/signup/otp/request", async (req: Request, res: Response) => {
     const e164 = phoneNorm.e164;
     const maskedDest = maskPhone(e164);
 
-    // 3. Anti-enumeration: Check if phone is already registered
+    // 3. Check if phone is already registered
     const existing = await db
       .select({ id: users.id })
       .from(users)
@@ -93,38 +91,16 @@ router.post("/signup/otp/request", async (req: Request, res: Response) => {
         event: "signup_otp_requested_existing_phone",
         identifier: e164,
         req,
-        status: "success",
+        status: "failed",
       });
 
-      // Disclose nothing: return generic success body so attackers cannot enumerate
-      return res.json({
-        status: "ok",
-        retryAfter: 60,
-        maskedDestination: maskedDest,
+      return res.status(409).json({
+        error: "This phone number is already registered. Please sign in or reset your password.",
+        alreadyRegistered: true,
       });
     }
 
-    // 4. Baileys: verify number exists on WhatsApp network
-    if (!baileysService.isConnected()) {
-      return res.status(503).json({
-        error: "WhatsApp delivery service is temporarily unavailable. Please try again shortly.",
-      });
-    }
-
-    const waCheck = await checkNumberOnWhatsApp(e164);
-    if (!waCheck.exists) {
-      if (waCheck.error) {
-        return res.status(503).json({
-          error: "WhatsApp delivery service is temporarily unavailable. Please try again shortly.",
-        });
-      }
-      return res.status(422).json({
-        error:
-          "This phone number is not registered on WhatsApp. WashFlow requires an active WhatsApp number for pickup and delivery coordination.",
-      });
-    }
-
-    // 5. Generate and store OTP (automatically queues delivery to Baileys worker)
+    // 4. Generate and dispatch OTP via Meta WhatsApp Cloud API (Authentication template)
     const sessionBindingId =
       req.cookies?.["wf_preauth"] ||
       req.cookies?.["__Host-wf_preauth"] ||
@@ -138,8 +114,9 @@ router.post("/signup/otp/request", async (req: Request, res: Response) => {
     });
 
     if (!otpResult.success) {
-      return res.status(429).json({
-        error: otpResult.error,
+      const statusCode = otpResult.retryAfterSeconds ? 429 : 502;
+      return res.status(statusCode).json({
+        error: otpResult.error || "Couldn't send the code, check your number or try again.",
         retryAfter: otpResult.retryAfterSeconds || 60,
       });
     }
@@ -157,6 +134,7 @@ router.post("/signup/otp/request", async (req: Request, res: Response) => {
     }).catch(() => {});
 
     return res.json({
+      success: true,
       status: "ok",
       retryAfter: otpResult.retryAfterSeconds || 60,
       maskedDestination: maskedDest,
@@ -164,6 +142,93 @@ router.post("/signup/otp/request", async (req: Request, res: Response) => {
   } catch (err) {
     console.error("Signup OTP request error:", err);
     return res.status(500).json({ error: "Failed to process verification request." });
+  }
+});
+
+// ============================================================================
+// 1B. STANDALONE SEND & VERIFY OTP ROUTES (/api/auth/send-otp & /api/auth/verify-otp)
+// ============================================================================
+router.post("/send-otp", async (req: Request, res: Response) => {
+  try {
+    const rawPhone = req.body?.phone;
+    if (!rawPhone || typeof rawPhone !== "string") {
+      return res.status(400).json({ error: "Phone number is required." });
+    }
+
+    const phoneNorm = normalizePhoneNumber(rawPhone);
+    if (!phoneNorm.valid || !phoneNorm.e164) {
+      return res.status(422).json({ error: phoneNorm.error || "Invalid Kenyan phone number." });
+    }
+
+    const e164 = phoneNorm.e164;
+    const clientIp = getClientIp(req);
+    const sessionBindingId =
+      req.cookies?.["wf_preauth"] ||
+      req.cookies?.["__Host-wf_preauth"] ||
+      getClientIp(req);
+
+    const otpResult = await createAndStoreOtp({
+      e164Phone: e164,
+      purpose: "signup",
+      clientIp,
+      sessionBindingId,
+    });
+
+    if (!otpResult.success) {
+      const statusCode = otpResult.retryAfterSeconds ? 429 : 502;
+      return res.status(statusCode).json({
+        error: otpResult.error || "Couldn't send the code, check your number or try again.",
+        retryAfter: otpResult.retryAfterSeconds || 60,
+      });
+    }
+
+    return res.json({
+      success: true,
+      phone: e164,
+      maskedDestination: maskPhone(e164),
+      retryAfter: otpResult.retryAfterSeconds || 60,
+    });
+  } catch (err) {
+    console.error("Send OTP error:", err);
+    return res.status(500).json({ error: "Failed to send verification code." });
+  }
+});
+
+router.post("/verify-otp", async (req: Request, res: Response) => {
+  try {
+    const { phone: rawPhone, code } = req.body || {};
+    if (!rawPhone || !code) {
+      return res.status(400).json({ error: "Phone number and 6-digit code are required." });
+    }
+
+    const phoneNorm = normalizePhoneNumber(rawPhone);
+    if (!phoneNorm.valid || !phoneNorm.e164) {
+      return res.status(422).json({ error: "Invalid phone number." });
+    }
+
+    const sessionBindingId =
+      req.cookies?.["wf_preauth"] ||
+      req.cookies?.["__Host-wf_preauth"] ||
+      getClientIp(req);
+
+    const result = await verifyAndConsumeOtp({
+      e164Phone: phoneNorm.e164,
+      code,
+      purpose: "signup",
+      sessionBindingId,
+    });
+
+    if (!result.success) {
+      return res.status(400).json({ error: result.error || "That code is invalid or has expired." });
+    }
+
+    return res.json({
+      success: true,
+      verificationToken: result.verificationToken,
+    });
+  } catch (err) {
+    console.error("Verify OTP error:", err);
+    return res.status(500).json({ error: "Failed to verify code." });
   }
 });
 
@@ -291,30 +356,12 @@ router.post("/google/link-phone", async (req: Request, res: Response) => {
     }
 
     const e164 = phoneNorm.e164;
-    if (!baileysService.isConnected()) {
-      return res.status(503).json({
-        error: "WhatsApp delivery service is temporarily unavailable. Please try again shortly.",
-      });
-    }
-
-    const waCheck = await checkNumberOnWhatsApp(e164);
-    if (!waCheck.exists) {
-      if (waCheck.error) {
-        return res.status(503).json({
-          error: "WhatsApp delivery service is temporarily unavailable. Please try again shortly.",
-        });
-      }
-      return res.status(422).json({
-        error: "This phone number is not registered on WhatsApp. WashFlow requires an active WhatsApp number.",
-      });
-    }
-
     const sessionBindingId =
       req.cookies?.["wf_preauth"] ||
       req.cookies?.["__Host-wf_preauth"] ||
       getClientIp(req);
 
-    // Generate and send OTP to this WhatsApp number
+    // Generate and dispatch OTP to this WhatsApp number via Meta Cloud API
     const otpResult = await createAndStoreOtp({
       e164Phone: e164,
       purpose: "signup",
@@ -323,13 +370,15 @@ router.post("/google/link-phone", async (req: Request, res: Response) => {
     });
 
     if (!otpResult.success) {
-      return res.status(429).json({
-        error: otpResult.error,
+      const statusCode = otpResult.retryAfterSeconds ? 429 : 502;
+      return res.status(statusCode).json({
+        error: otpResult.error || "Couldn't send the code, check your number or try again.",
         retryAfter: otpResult.retryAfterSeconds || 60,
       });
     }
 
     return res.json({
+      success: true,
       status: "ok",
       retryAfter: otpResult.retryAfterSeconds || 60,
       maskedDestination: maskPhone(e164),
@@ -752,14 +801,10 @@ router.post("/login", async (req: Request, res: Response) => {
       return res.status(403).json({ error: "Invalid username or password." });
     }
 
-    // Admin login: If in test mode or WhatsApp Gateway is connected, require WhatsApp OTP step-up.
-    // If WhatsApp Gateway is not yet connected in dev/prod, allow direct admin password login
-    // so the admin can access /admin/whatsapp to scan the QR code and connect!
+    // Admin login: Require WhatsApp OTP step-up authentication
     if (user.role === "admin") {
-      const shouldRequireStepup = env.NODE_ENV === "test" || baileysService.isConnected();
-
-      if (shouldRequireStepup) {
-        const adminPhone = user.phoneE164 || user.phone;
+      const adminPhone = user.phoneE164 || user.phone;
+      if (adminPhone) {
         if (!adminPhone) {
           return res.status(500).json({
             error: "Admin account has no WhatsApp phone number configured. Please run CLI setup.",
@@ -1000,12 +1045,6 @@ router.post("/forgot-password/request", async (req: Request, res: Response) => {
         success: true,
         message: "If an account exists, a verification code has been sent.",
         retryAfter: 60,
-      });
-    }
-
-    if (!baileysService.isConnected()) {
-      return res.status(503).json({
-        error: "WhatsApp delivery service is temporarily unavailable. Please try again shortly.",
       });
     }
 

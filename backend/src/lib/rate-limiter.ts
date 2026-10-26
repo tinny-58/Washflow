@@ -1,5 +1,5 @@
 import Redis from "ioredis";
-import { db } from "../db";
+import { db, pool } from "../db";
 import { rateLimits } from "../db/schema";
 import { eq, sql } from "drizzle-orm";
 import { env } from "./env";
@@ -221,3 +221,31 @@ export function rateLimitExceededResponse(resetSeconds: number, message = "Too m
     }
   );
 }
+
+/**
+ * Clears rate limiting state for a key or pattern (useful for tests and administrative resets).
+ */
+export async function resetRateLimit(keyOrPattern: string): Promise<void> {
+  const redis = await getRedis();
+  if (redis) {
+    try {
+      if (keyOrPattern.includes("*")) {
+        const keys = await redis.keys(keyOrPattern);
+        if (keys.length > 0) {
+          await redis.del(...keys);
+        }
+      } else {
+        await redis.del(keyOrPattern);
+      }
+    } catch {}
+  }
+  try {
+    if (keyOrPattern.includes("*")) {
+      const sqlPattern = keyOrPattern.replace(/\*/g, "%");
+      await pool.query("DELETE FROM rate_limits WHERE key LIKE $1", [sqlPattern]);
+    } else {
+      await pool.query("DELETE FROM rate_limits WHERE key = $1", [keyOrPattern]);
+    }
+  } catch {}
+}
+

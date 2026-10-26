@@ -1,5 +1,4 @@
-import { baileysService } from "../baileys/baileys-service";
-import { getOtpQueue } from "../baileys/queue";
+import { customerMessaging } from "../../services/customer-messaging";
 
 export interface WhatsAppMessagePayload {
   toPhone: string;
@@ -9,49 +8,35 @@ export interface WhatsAppMessagePayload {
 
 export async function sendWhatsAppMessage(payload: WhatsAppMessagePayload): Promise<{
   success: boolean;
-  provider: "baileys";
+  provider: "meta" | "twilio_sms" | "mock";
   messageId?: string;
   error?: string;
 }> {
   const { toPhone, messageText, otpCode } = payload;
 
   if (otpCode) {
-    try {
-      const queue = getOtpQueue();
-      const job = await queue.add("send-otp", {
-        otpId: `wa_msg_${Date.now()}`,
-        toPhone,
-        otpCode,
-        purpose: "signup",
-      });
-      return {
-        success: true,
-        provider: "baileys",
-        messageId: job.id,
-      };
-    } catch (err: any) {
-      return {
-        success: false,
-        provider: "baileys",
-        error: err.message,
-      };
-    }
-  }
-
-  // Text message delivery
-  try {
-    const res = await baileysService.sendTextMessage(toPhone, messageText);
+    const res = await customerMessaging.sendOtp({
+      toPhoneE164: toPhone,
+      otpCode,
+    });
     return {
       success: res.success,
-      provider: "baileys",
-      messageId: res.messageId,
+      provider: res.provider,
+      messageId: res.providerMessageId,
       error: res.error,
     };
-  } catch (err: any) {
-    return {
-      success: false,
-      provider: "baileys",
-      error: err.message || "Failed to dispatch WhatsApp message",
-    };
   }
+
+  // Text message delivery using OTF Washflow identity
+  const res = await customerMessaging.sendCustomerSupportText({
+    recipientPhone: toPhone,
+    messageText,
+  });
+
+  return {
+    success: res.success,
+    provider: res.provider,
+    messageId: res.providerMessageId,
+    error: res.error,
+  };
 }
