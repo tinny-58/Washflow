@@ -1,0 +1,41 @@
+name: Auth Card Layout Stability Matrix
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+    branches: [main, master]
+
+jobs:
+  layout-tests:
+    name: Playwright Auth Card Layout Matrix
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Install Playwright Browsers
+        run: npx playwright install --with-deps chromium firefox webkit
+
+      - name: Run Layout Matrix Suite
+        run: npm run test:layout
+
+      - name: Run Playwright Spec Suite
+        run: npx playwright test
+
+      - name: Upload Test Screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: layout-matrix-screenshots
+          path: tests/screenshots/
+          if-no-files-found: warn

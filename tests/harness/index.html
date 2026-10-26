@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="en" class="dark h-full">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, interactive-widget=resizes-content" />
+  <title>WashFlow Auth Card Isolated Test Harness</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: "class",
+      theme: {
+        extend: {
+          colors: {
+            slate: {
+              800: "#1e293b",
+              900: "#0f172a",
+              950: "#020617",
+            },
+            sky: {
+              400: "#38bdf8",
+              500: "#0ea5e9",
+              600: "#0284c7",
+            },
+            emerald: {
+              400: "#34d399",
+              500: "#10b981",
+              600: "#059669",
+            },
+            rose: {
+              400: "#fb7185",
+              500: "#f43f5e",
+            },
+            amber: {
+              400: "#fbbf24",
+              500: "#f59e0b",
+            }
+          }
+        }
+      }
+    };
+  </script>
+  <style>
+    :root {
+      /* Navbar & Hero Layout Tokens */
+      --nav-h: 64px;
+      --hero-gap: 20px;
+      --hero-card-h: calc(100vh - var(--nav-h) - (2 * var(--hero-gap)));
+      --hero-card-h: calc(100dvh - var(--nav-h) - (2 * var(--hero-gap)));
+      --hero-card-min-h: 540px;
+      --hero-banner-h: clamp(200px, 30vh, 320px);
+      --hero-banner-h: clamp(200px, 30dvh, 320px);
+
+      /* Auth Card Design Tokens */
+      --auth-card-w: 470px;
+      --auth-card-h: clamp(480px, 50vh, 560px);
+      --auth-card-h: clamp(480px, 50dvh, 560px);
+      --auth-card-pad: 32px;
+      --auth-card-pad-mobile: 20px;
+      --auth-card-msg-h: 40px;
+    }
+
+    .auth-card-shell {
+      box-sizing: border-box;
+      width: min(var(--auth-card-w), calc(100vw - 32px));
+      height: var(--auth-card-h);
+      min-height: var(--auth-card-h);
+      max-height: var(--auth-card-h);
+      flex-shrink: 0;
+    }
+
+    .hero-card {
+      position: relative;
+      width: 100%;
+      height: var(--hero-banner-h);
+      min-height: 200px;
+      max-height: 320px;
+      box-sizing: border-box;
+    }
+
+    @media (min-width: 1024px) {
+      .hero-card {
+        height: max(var(--hero-card-h), var(--hero-card-min-h));
+        min-height: var(--hero-card-min-h);
+        max-height: none;
+      }
+    }
+
+    .view-content {
+      transition: opacity 150ms ease-in-out;
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .view-content {
+        transition: none !important;
+      }
+    }
+
+    /* Hide spinners in number inputs */
+    input[type=number]::-webkit-inner-spin-button, 
+    input[type=number]::-webkit-outer-spin-button { 
+      -webkit-appearance: none; 
+      margin: 0; 
+    }
+  </style>
+</head>
+<body class="min-h-screen bg-slate-950 text-slate-100 antialiased flex flex-col font-sans select-none m-0 p-0">
+  <!-- Top Navigation Mock -->
+  <header class="h-[var(--nav-h)] border-b border-slate-800/80 px-6 flex items-center justify-between shrink-0 box-border" style="height: var(--nav-h);">
+    <div class="flex items-center gap-2">
+      <div class="w-8 h-8 rounded-lg bg-sky-500 flex items-center justify-center font-black text-white">W</div>
+      <span class="font-bold text-lg tracking-tight text-white">WashFlow</span>
+    </div>
+    <div class="text-xs text-slate-400 font-mono">Isolated Layout Test Harness</div>
+  </header>
+
+  <!-- Hero Container matching Landing Page -->
+  <main class="hero-section flex-1 w-full min-h-[calc(100vh-var(--nav-h))] min-h-[calc(100dvh-var(--nav-h))] flex flex-col justify-center px-4 sm:px-6 lg:px-8 xl:px-10 overflow-x-hidden overflow-y-auto box-border" style="padding-top: var(--hero-gap); padding-bottom: var(--hero-gap);">
+    <div class="hero-grid w-full max-w-[1700px] mx-auto grid grid-cols-1 lg:grid-cols-[minmax(0,1.25fr)_minmax(470px,0.85fr)] xl:grid-cols-[minmax(0,1.35fr)_minmax(470px,0.85fr)] gap-6 lg:gap-8 xl:gap-10 items-stretch my-auto" style="min-height: var(--hero-card-min-h); height: 100%;">
+      
+      <!-- 1. Left Hero (Full Height on Desktop, Compact Banner on Mobile) -->
+      <div class="w-full h-full flex flex-col justify-stretch">
+        <div class="hero-card relative w-full h-full rounded-3xl sm:rounded-[2.5rem] overflow-hidden border border-white/15 shadow-2xl bg-slate-950/80 backdrop-blur-xl flex flex-col justify-end p-6 sm:p-8 lg:p-10 xl:p-12 select-none">
+          <img src="/images/services/service-fast-delivery.webp" alt="" class="absolute inset-0 w-full h-full object-cover" style="object-position: center 78%;" />
+          <div class="absolute inset-0 bg-gradient-to-t from-slate-950/95 via-slate-950/45 to-slate-950/20 pointer-events-none"></div>
+          <div class="relative z-10 max-w-xl space-y-2">
+            <h2 class="text-2xl sm:text-3xl lg:text-4xl xl:text-5xl font-black text-white leading-tight tracking-tight drop-shadow-2xl">24h Doorstep Delivery</h2>
+            <p class="text-sm sm:text-base lg:text-lg text-slate-200/95 font-medium leading-relaxed drop-shadow-lg">Sealed tamper-evident return across Nairobi within 24 hours.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- 2. Right Hero (Holds AuthCard Shell, vertically centered) -->
+      <div id="auth-section" class="w-full flex flex-col items-center justify-center self-center">
+        
+        <!-- ================================================================ -->
+        <!-- AUTHCARD SHELL (The Single Shell Component)                      -->
+        <!-- ================================================================ -->
+        <div
+          id="auth-card"
+          class="auth-card-shell relative bg-slate-900/95 border border-slate-800 backdrop-blur-xl rounded-2xl p-6 sm:p-8 shadow-2xl flex flex-col justify-between overflow-hidden"
+        >
+          <!-- ROW 1: HEADER ROW (Fixed Height: 32px, Never shifts coordinates) -->
+          <div id="card-header" class="h-8 mb-3 flex items-center justify-between shrink-0">
+            <!-- Dynamic Left (Back link or Authentication badge) -->
+            <div id="header-left"></div>
+            <!-- Dynamic Right (Status Badge or Spacer) -->
+            <div id="header-right"></div>
+          </div>
+
+          <!-- ROW 2: FLEXIBLE BODY ROW (Title + Reserved Message Slot + Content) -->
+          <div id="card-body" class="flex-1 flex flex-col justify-between min-h-0 view-content">
+            <div>
+              <!-- Title & Subtitle (Stable 48px slot) -->
+              <div class="min-h-[48px] max-h-[48px] mb-2 shrink-0 flex flex-col justify-center">
+                <h2 id="card-title" tabindex="-1" class="text-lg sm:text-xl font-bold text-white tracking-tight focus:outline-none"></h2>
+                <p id="card-subtitle" class="text-xs text-slate-400 mt-0.5 line-clamp-1 break-words"></p>
+              </div>
+
+              <!-- Reserved Fixed-Height Message Slot (40px, aria-live="polite", CLS = 0) -->
+              <div id="message-slot" class="h-10 min-h-[40px] max-h-[40px] mb-2.5 shrink-0 flex items-center" aria-live="polite">
+                <!-- Dynamically populated or empty placeholder -->
+              </div>
+
+              <!-- View Form / Interactive Content -->
+              <div id="view-form-container">
+                <!-- Injected via renderView() -->
+              </div>
+            </div>
+          </div>
+
+          <!-- ROW 3: FOOTER ROW (Fixed Height: 32px, View-Switch Link Only) -->
+          <div id="card-footer" class="h-8 pt-2.5 border-t border-slate-800/80 shrink-0 flex items-center justify-center text-center mt-auto">
+            <!-- Injected via renderFooter() -->
+          </div>
+        </div>
+
+      </div>
+    </div>
+  </main>
+
+  <script>
+    // State
+    const urlParams = new URLSearchParams(window.location.search);
+    let currentView = urlParams.get("view") || "login";
+    let errorMessage = urlParams.get("error") || null;
+    let infoMessage = urlParams.get("info") || null;
+    let resendCooldown = parseInt(urlParams.get("countdown") || "0", 10);
+    let chosenUsername = "";
+    let chosenPassword = "";
+    let termsAccepted = false;
+    let marketingConsent = false;
+    let otpValues = ["", "", "", "", "", ""];
+
+    const viewDefs = {
+      login: {
+        title: "Sign In to Your Account",
+        subtitle: "Enter your credentials to manage orders and pickups.",
+        headerLeft: '<span class="text-xs font-semibold uppercase tracking-wider text-sky-400">Authentication</span>',
+        headerRight: '<span class="w-1 h-1 opacity-0 pointer-events-none" aria-hidden="true"></span>',
+        footer: '<span class="text-xs text-slate-400">Don\'t have an account? <button type="button" onclick="switchView(\'signup-select\')" class="font-semibold text-sky-400 hover:text-sky-300 transition cursor-pointer">Sign Up</button></span>'
+      },
+      "admin-stepup": {
+        title: "Admin Verification",
+        subtitle: "Enter the 6-digit administrator code sent to WhatsApp on +254 7•• ••• 789.",
+        headerLeft: '<button type="button" onclick="switchView(\'login\')" class="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition cursor-pointer min-h-[44px] -ml-1 px-1 py-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg><span>Back</span></button>',
+        headerRight: '<span class="inline-flex items-center gap-1 text-[11px] font-semibold text-amber-400 bg-amber-500/10 px-2.5 py-0.5 rounded-full border border-amber-500/20"><svg class="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10"/><path d="M12 8v4"/><path d="M12 16h.01"/></svg> Step-Up Required</span>',
+        footer: '<button type="button" onclick="switchView(\'login\')" class="text-xs font-medium text-slate-400 hover:text-white transition cursor-pointer">Back to sign in</button>'
+      },
+      "signup-select": {
+        title: "Create an Account",
+        subtitle: "Choose your preferred way to register.",
+        headerLeft: '<button type="button" onclick="switchView(\'login\')" class="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition cursor-pointer min-h-[44px] -ml-1 px-1 py-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg><span>Back</span></button>',
+        headerRight: '<span class="w-1 h-1 opacity-0 pointer-events-none" aria-hidden="true"></span>',
+        footer: '<span class="text-xs text-slate-400">Already have an account? <button type="button" onclick="switchView(\'login\')" class="font-semibold text-sky-400 hover:text-sky-300 transition cursor-pointer">Sign In</button></span>'
+      },
+      "google-link-phone": {
+        title: "Link WhatsApp Number",
+        subtitle: "WashFlow requires an active WhatsApp number for order notifications.",
+        headerLeft: '<button type="button" onclick="switchView(\'signup-select\')" class="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition cursor-pointer min-h-[44px] -ml-1 px-1 py-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg><span>Back</span></button>',
+        headerRight: '<span class="w-1 h-1 opacity-0 pointer-events-none" aria-hidden="true"></span>',
+        footer: '<button type="button" onclick="switchView(\'login\')" class="text-xs font-medium text-slate-400 hover:text-white transition cursor-pointer">Back to sign in</button>'
+      },
+      "signup-otp": {
+        title: "Verify Your WhatsApp",
+        subtitle: "Enter the 6-digit code sent to WhatsApp on +254 7•• ••• 789.",
+        headerLeft: '<button type="button" onclick="switchView(\'signup-select\')" class="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition cursor-pointer min-h-[44px] -ml-1 px-1 py-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg><span>Back</span></button>',
+        headerRight: '<span class="w-1 h-1 opacity-0 pointer-events-none" aria-hidden="true"></span>',
+        footer: '<button type="button" onclick="switchView(\'login\')" class="text-xs font-medium text-slate-400 hover:text-white transition cursor-pointer">Back to sign in</button>'
+      },
+      "signup-credentials": {
+        title: "Choose Username & Password",
+        subtitle: "Step 1 of 2: Create a unique handle and strong password.",
+        headerLeft: '<button type="button" onclick="switchView(\'signup-otp\')" class="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition cursor-pointer min-h-[44px] -ml-1 px-1 py-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg><span>Back</span></button>',
+        headerRight: '<span class="w-1 h-1 opacity-0 pointer-events-none" aria-hidden="true"></span>',
+        footer: '<button type="button" onclick="switchView(\'login\')" class="text-xs font-medium text-slate-400 hover:text-white transition cursor-pointer">Back to sign in</button>'
+      },
+      "signup-agreements": {
+        title: "Terms & Agreements",
+        subtitle: "Step 2 of 2: Review service terms before completing registration.",
+        headerLeft: '<button type="button" onclick="switchView(\'signup-credentials\')" class="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition cursor-pointer min-h-[44px] -ml-1 px-1 py-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg><span>Back</span></button>',
+        headerRight: '<span class="w-1 h-1 opacity-0 pointer-events-none" aria-hidden="true"></span>',
+        footer: '<button type="button" onclick="switchView(\'login\')" class="text-xs font-medium text-slate-400 hover:text-white transition cursor-pointer">Back to sign in</button>'
+      },
+      forgot: {
+        title: "Reset Password",
+        subtitle: "Enter your username or phone number to receive a reset code.",
+        headerLeft: '<button type="button" onclick="switchView(\'login\')" class="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition cursor-pointer min-h-[44px] -ml-1 px-1 py-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg><span>Back</span></button>',
+        headerRight: '<span class="w-1 h-1 opacity-0 pointer-events-none" aria-hidden="true"></span>',
+        footer: '<button type="button" onclick="switchView(\'login\')" class="text-xs font-medium text-slate-400 hover:text-white transition cursor-pointer">Back to sign in</button>'
+      },
+      "forgot-otp": {
+        title: "Verify Reset Code",
+        subtitle: "Enter the 6-digit code sent to your WhatsApp.",
+        headerLeft: '<button type="button" onclick="switchView(\'forgot\')" class="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition cursor-pointer min-h-[44px] -ml-1 px-1 py-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg><span>Back</span></button>',
+        headerRight: '<span class="w-1 h-1 opacity-0 pointer-events-none" aria-hidden="true"></span>',
+        footer: '<button type="button" onclick="switchView(\'login\')" class="text-xs font-medium text-slate-400 hover:text-white transition cursor-pointer">Back to sign in</button>'
+      },
+      reset: {
+        title: "Set New Password",
+        subtitle: "Enter a strong password (minimum 10 characters).",
+        headerLeft: '<button type="button" onclick="switchView(\'forgot\')" class="inline-flex items-center gap-1.5 text-xs text-slate-400 hover:text-white transition cursor-pointer min-h-[44px] -ml-1 px-1 py-1"><svg class="w-3.5 h-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="m12 19-7-7 7-7"/><path d="M19 12H5"/></svg><span>Back</span></button>',
+        headerRight: '<span class="w-1 h-1 opacity-0 pointer-events-none" aria-hidden="true"></span>',
+        footer: '<button type="button" onclick="switchView(\'login\')" class="text-xs font-medium text-slate-400 hover:text-white transition cursor-pointer">Back to sign in</button>'
+      },
+      "reset-success": {
+        title: "Password Reset Successful",
+        subtitle: "Your password has been changed. You can now sign in.",
+        headerLeft: '<span class="w-1 h-1 opacity-0 pointer-events-none" aria-hidden="true"></span>',
+        headerRight: '<span class="w-1 h-1 opacity-0 pointer-events-none" aria-hidden="true"></span>',
+        footer: '<button type="button" onclick="switchView(\'login\')" class="text-xs font-semibold text-sky-400 hover:text-sky-300 transition cursor-pointer">Back to sign in</button>'
+      }
+    };
+
+    function renderMessageSlot() {
+      const slot = document.getElementById("message-slot");
+      if (errorMessage) {
+        slot.innerHTML = `
+          <div role="alert" aria-live="assertive" class="w-full px-2.5 py-1.5 rounded-lg bg-rose-500/10 border border-rose-500/20 text-rose-300 text-xs flex items-center gap-2 overflow-hidden">
+            <svg class="w-4 h-4 shrink-0 text-rose-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="12" x2="12" y1="8" y2="12"/><line x1="12" x2="12.01" y1="16" y2="16"/></svg>
+            <span class="truncate">${errorMessage}</span>
+          </div>`;
+      } else if (infoMessage) {
+        slot.innerHTML = `
+          <div role="status" aria-live="polite" class="w-full px-2.5 py-1.5 rounded-lg bg-sky-500/10 border border-sky-500/20 text-sky-300 text-xs flex items-center gap-2 overflow-hidden">
+            <svg class="w-4 h-4 shrink-0 text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+            <span class="truncate">${infoMessage}</span>
+          </div>`;
+      } else if ((currentView === "signup-otp" || currentView === "forgot-otp" || currentView === "admin-stepup") && resendCooldown > 0) {
+        slot.innerHTML = `
+          <div role="status" aria-live="polite" class="w-full px-2.5 py-1.5 rounded-lg bg-slate-800/60 border border-slate-700/50 text-slate-400 text-xs flex items-center justify-center gap-2">
+            <svg class="w-3.5 h-3.5 animate-spin text-sky-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M21 12a9 9 0 0 0-9-9 9.75 9.75 0 0 0-6.74 2.74L3 8"/><path d="M3 3v5h5"/></svg>
+            <span>Resend code in ${resendCooldown}s</span>
+          </div>`;
+      } else {
+        slot.innerHTML = '<div aria-hidden="true" class="w-full h-full"></div>';
+      }
+    }
+
+    function renderView(viewName) {
+      const def = viewDefs[viewName] || viewDefs.login;
+      document.getElementById("card-title").innerText = def.title;
+      document.getElementById("card-subtitle").innerText = def.subtitle;
+      document.getElementById("header-left").innerHTML = def.headerLeft;
+      document.getElementById("header-right").innerHTML = def.headerRight;
+      document.getElementById("card-footer").innerHTML = def.footer;
+
+      renderMessageSlot();
+
+      const container = document.getElementById("view-form-container");
+
+      if (viewName === "login") {
+        container.innerHTML = `
+          <form onsubmit="handleLoginSubmit(event)" class="space-y-3">
+            <div>
+              <label for="login-username" class="block text-xs font-medium text-slate-300 mb-1">Username or Phone Number</label>
+              <div class="relative">
+                <input id="login-username" name="username" type="text" autocomplete="username" required placeholder="e.g. joshua or 0712345678" class="w-full h-11 pl-3 pr-3 bg-slate-800/80 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              </div>
+            </div>
+            <div>
+              <div class="flex items-center justify-between mb-1">
+                <label for="login-password" class="block text-xs font-medium text-slate-300">Password</label>
+                <button type="button" onclick="switchView('forgot')" class="text-xs text-sky-400 hover:text-sky-300 transition">Forgot password?</button>
+              </div>
+              <div class="relative">
+                <input id="login-password" name="password" type="password" autocomplete="current-password" required placeholder="••••••••••••" class="w-full h-11 pl-3 pr-11 bg-slate-800/80 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+                <button type="button" class="absolute right-0 top-0 w-11 h-11 flex items-center justify-center text-slate-400 hover:text-white" aria-label="Toggle password">
+                  <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 12s3-7 10-7 10 7 10 7-3 7-10 7-10-7-10-7Z"/><circle cx="12" cy="12" r="3"/></svg>
+                </button>
+              </div>
+            </div>
+            <button type="submit" class="w-full h-11 px-4 bg-sky-500 hover:bg-sky-600 text-white font-medium rounded-lg text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-sky-500/25 cursor-pointer mt-2">
+              <span>Sign In</span>
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+          </form>`;
+      } else if (viewName === "admin-stepup" || viewName === "signup-otp" || viewName === "forgot-otp") {
+        container.innerHTML = `
+          <form onsubmit="handleOtpSubmit(event)" class="space-y-3.5">
+            <div>
+              <label class="block text-xs font-medium text-slate-300 mb-2 text-center">6-Digit Security Code</label>
+              <div class="flex justify-between gap-1.5 sm:gap-2">
+                ${[0, 1, 2, 3, 4, 5].map(i => `
+                  <input type="text" inputmode="numeric" maxlength="1" value="${otpValues[i]}" class="w-10 sm:w-11 h-11 sm:h-12 text-center text-lg font-bold bg-slate-800 border border-slate-700 rounded-lg text-white focus:outline-none focus:ring-2 focus:ring-sky-500 transition" />
+                `).join("")}
+              </div>
+            </div>
+            <button type="submit" class="w-full h-11 px-4 bg-sky-500 hover:bg-sky-600 text-white font-medium rounded-lg text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-sky-500/25 cursor-pointer">
+              <span>Verify & Continue</span>
+            </button>
+          </form>`;
+      } else if (viewName === "signup-select") {
+        container.innerHTML = `
+          <div class="space-y-3">
+            <form onsubmit="handleSignupPhoneSubmit(event)" class="space-y-2.5">
+              <div>
+                <label for="signup-phone" class="block text-xs font-medium text-slate-300 mb-1">Continue with WhatsApp Number</label>
+                <input id="signup-phone" name="phone" type="tel" required placeholder="0712 345 678" class="w-full h-11 pl-3 pr-3 bg-slate-800/80 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              </div>
+              <button type="submit" class="w-full h-11 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 cursor-pointer">
+                <span>Continue with WhatsApp</span>
+                <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+              </button>
+            </form>
+            <div class="relative flex py-1 items-center">
+              <div class="flex-grow border-t border-slate-800"></div>
+              <span class="flex-shrink mx-3 text-xs text-slate-500 font-medium">OR</span>
+              <div class="flex-grow border-t border-slate-800"></div>
+            </div>
+            <button type="button" class="w-full h-11 px-4 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-white font-medium rounded-lg text-sm transition flex items-center justify-center gap-2">
+              <span>Continue with Google</span>
+            </button>
+          </div>`;
+      } else if (viewName === "google-link-phone") {
+        container.innerHTML = `
+          <form onsubmit="switchView('signup-otp')" class="space-y-3.5">
+            <div>
+              <label for="google-phone" class="block text-xs font-medium text-slate-300 mb-1">WhatsApp Phone Number</label>
+              <input id="google-phone" name="phone" type="tel" required placeholder="0712 345 678" class="w-full h-11 pl-3 pr-3 bg-slate-800/80 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            </div>
+            <button type="submit" class="w-full h-11 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-medium rounded-lg text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-emerald-600/25 cursor-pointer">
+              <span>Send WhatsApp Code</span>
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+          </form>`;
+      } else if (viewName === "signup-credentials") {
+        container.innerHTML = `
+          <form onsubmit="handleCredentialsSubmit(event)" class="space-y-3">
+            <div>
+              <label for="chosen-username" class="block text-xs font-medium text-slate-300 mb-1">Choose a Username</label>
+              <input id="chosen-username" name="username" type="text" required placeholder="e.g. joshua_k" value="${chosenUsername}" class="w-full h-11 pl-3 pr-3 bg-slate-800/80 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+              <div class="mt-1 flex items-center gap-1.5 overflow-hidden">
+                <span class="text-[11px] text-slate-400 shrink-0">Try:</span>
+                <span class="text-[11px] px-2 py-0.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/30">@joshua_1</span>
+                <span class="text-[11px] px-2 py-0.5 rounded bg-sky-500/10 text-sky-300 border border-sky-500/30">@josh_kenya</span>
+              </div>
+            </div>
+            <div>
+              <label for="chosen-password" class="block text-xs font-medium text-slate-300 mb-1">Create a Password (min. 10 characters)</label>
+              <input id="chosen-password" name="password" type="password" required placeholder="••••••••••••" value="${chosenPassword}" class="w-full h-11 pl-3 pr-11 bg-slate-800/80 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            </div>
+            <button type="submit" class="w-full h-11 px-4 bg-sky-500 hover:bg-sky-600 text-white font-medium rounded-lg text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-sky-500/25 cursor-pointer mt-2">
+              <span>Continue to Agreements</span>
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+          </form>`;
+      } else if (viewName === "signup-agreements") {
+        container.innerHTML = `
+          <form onsubmit="handleAgreementsSubmit(event)" class="space-y-3.5">
+            <div class="p-3 rounded-lg bg-slate-800/50 border border-slate-700/60 space-y-3">
+              <div class="flex items-start gap-2.5">
+                <input id="terms-check" type="checkbox" required ${termsAccepted ? "checked" : ""} class="mt-0.5 h-4 w-4 rounded border-slate-700 bg-slate-800 text-sky-500" />
+                <label for="terms-check" class="text-xs text-slate-300 leading-relaxed cursor-pointer select-none">
+                  I agree to the <a href="/prices#terms" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:text-sky-300 underline">Terms of Service</a> and <a href="/privacy" target="_blank" rel="noopener noreferrer" class="text-sky-400 hover:text-sky-300 underline">Privacy Policy</a>. (Required)
+                </label>
+              </div>
+              <div class="flex items-start gap-2.5">
+                <input id="marketing-check" type="checkbox" ${marketingConsent ? "checked" : ""} class="mt-0.5 h-4 w-4 rounded border-slate-700 bg-slate-800 text-sky-500" />
+                <label for="marketing-check" class="text-xs text-slate-400 leading-relaxed cursor-pointer select-none">
+                  Receive occasional laundry offers, discounts, and schedule updates via WhatsApp. (Optional)
+                </label>
+              </div>
+            </div>
+            <button type="submit" class="w-full h-11 px-4 bg-sky-500 hover:bg-sky-600 text-white font-medium rounded-lg text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-sky-500/25 cursor-pointer mt-2">
+              <span>Complete Registration</span>
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+          </form>`;
+      } else if (viewName === "forgot") {
+        container.innerHTML = `
+          <form onsubmit="switchView('forgot-otp')" class="space-y-3.5">
+            <div>
+              <label for="forgot-id" class="block text-xs font-medium text-slate-300 mb-1">Username or WhatsApp Number</label>
+              <input id="forgot-id" name="id" type="text" required placeholder="e.g. joshua or 0712345678" class="w-full h-11 pl-3 pr-3 bg-slate-800/80 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            </div>
+            <button type="submit" class="w-full h-11 px-4 bg-sky-500 hover:bg-sky-600 text-white font-medium rounded-lg text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-sky-500/25 cursor-pointer">
+              <span>Send Reset Code</span>
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+          </form>`;
+      } else if (viewName === "reset") {
+        container.innerHTML = `
+          <form onsubmit="switchView('reset-success')" class="space-y-3.5">
+            <div>
+              <label for="reset-pwd" class="block text-xs font-medium text-slate-300 mb-1">New Password (min. 10 characters)</label>
+              <input id="reset-pwd" name="pwd" type="password" required placeholder="••••••••••••" class="w-full h-11 pl-3 pr-11 bg-slate-800/80 border border-slate-700 rounded-lg text-sm text-white placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-sky-500" />
+            </div>
+            <button type="submit" class="w-full h-11 px-4 bg-sky-500 hover:bg-sky-600 text-white font-medium rounded-lg text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-sky-500/25 cursor-pointer">
+              <span>Update Password</span>
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+          </form>`;
+      } else if (viewName === "reset-success") {
+        container.innerHTML = `
+          <div class="space-y-4 pt-2">
+            <div class="flex flex-col items-center justify-center text-center space-y-2">
+              <div class="w-12 h-12 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center">
+                <svg class="w-6 h-6 text-emerald-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+              </div>
+              <p class="text-xs text-slate-300">Your credentials have been securely updated.</p>
+            </div>
+            <button type="button" onclick="switchView('login')" class="w-full h-11 px-4 bg-sky-500 hover:bg-sky-600 text-white font-medium rounded-lg text-sm transition flex items-center justify-center gap-2 shadow-lg shadow-sky-500/25 cursor-pointer">
+              <span>Proceed to Sign In</span>
+              <svg class="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14"/><path d="m12 5 7 7-7 7"/></svg>
+            </button>
+          </div>`;
+      }
+
+      // Auto-focus first input
+      setTimeout(() => {
+        const first = container.querySelector("input:not([type=hidden])");
+        if (first) first.focus();
+        else document.getElementById("card-title").focus();
+      }, 30);
+    }
+
+    function switchView(newView) {
+      errorMessage = null;
+      infoMessage = null;
+      const body = document.getElementById("card-body");
+      body.style.opacity = "0";
+      setTimeout(() => {
+        currentView = newView;
+        renderView(newView);
+        body.style.opacity = "1";
+      }, 60);
+    }
+
+    function handleLoginSubmit(e) {
+      e.preventDefault();
+      const u = document.getElementById("login-username").value;
+      const p = document.getElementById("login-password").value;
+      if (!u || !p) {
+        errorMessage = "Please enter both username and password.";
+        renderMessageSlot();
+        return;
+      }
+      infoMessage = "Signing in...";
+      renderMessageSlot();
+    }
+
+    function handleSignupPhoneSubmit(e) {
+      e.preventDefault();
+      switchView("signup-otp");
+    }
+
+    function handleOtpSubmit(e) {
+      e.preventDefault();
+      if (currentView === "admin-stepup") {
+        infoMessage = "Admin verified successfully.";
+        renderMessageSlot();
+      } else if (currentView === "signup-otp") {
+        switchView("signup-credentials");
+      } else {
+        switchView("reset");
+      }
+    }
+
+    function handleCredentialsSubmit(e) {
+      e.preventDefault();
+      chosenUsername = document.getElementById("chosen-username").value;
+      chosenPassword = document.getElementById("chosen-password").value;
+      if (chosenPassword.length < 10) {
+        errorMessage = "Password must be at least 10 characters long.";
+        renderMessageSlot();
+        return;
+      }
+      switchView("signup-agreements");
+    }
+
+    function handleAgreementsSubmit(e) {
+      e.preventDefault();
+      termsAccepted = document.getElementById("terms-check").checked;
+      marketingConsent = document.getElementById("marketing-check").checked;
+      if (!termsAccepted) {
+        errorMessage = "Please agree to the Terms of Service to continue.";
+        renderMessageSlot();
+        return;
+      }
+      infoMessage = "Account created successfully!";
+      renderMessageSlot();
+    }
+
+    // Initial render
+    renderView(currentView);
+  </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+{
+  "..\\..\\node_modules\\next\\dist\\client\\index.js -> ../pages/_app": {
+    "id": 7489,
+    "files": [
+      "static/chunks/7489.5c5582099afc3f41.js"
+    ]
+  },
+  "..\\..\\node_modules\\next\\dist\\client\\index.js -> ../pages/_error": {
+    "id": 12,
+    "files": [
+      "static/chunks/12.f1f4d35b52633e8d.js"
+    ]
+  },
+  "app\\client\\track\\[id]\\page.tsx -> leaflet": {
+    "id": 29,
+    "files": [
+      "static/chunks/77cbbdfc.ad0043ae0a21f5a1.js"
+    ]
+  },
+  "app\\page.tsx -> @/components/dashboard/client-dashboard-view": {
+    "id": 2321,
+    "files": [
+      "static/chunks/3765-573363be8fc4004f.js",
+      "static/chunks/2321-4a80273f072690d4.js",
+      "static/chunks/5995.0e9223c2bdb972cb.js"
+    ]
+  },
+  "components\\admin\\map-view.tsx -> leaflet": {
+    "id": 29,
+    "files": [
+      "static/chunks/77cbbdfc.ad0043ae0a21f5a1.js"
+    ]
+  },
+  "components\\customer\\location-picker.tsx -> leaflet": {
+    "id": 29,
+    "files": [
+      "static/chunks/77cbbdfc.ad0043ae0a21f5a1.js"
+    ]
+  },
+  "components\\customer\\rider-location-ping.tsx -> leaflet": {
+    "id": 29,
+    "files": [
+      "static/chunks/77cbbdfc.ad0043ae0a21f5a1.js"
+    ]
+  }
+}

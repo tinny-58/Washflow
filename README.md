@@ -4,9 +4,65 @@ WashFlow is a full-stack, production-grade laundry service platform engineered f
 
 ---
 
+## 📁 Repository Structure
+
+The project is cleanly divided into **`backend`** and **`frontend`** under the same `Washflow` workspace to make code tracking, development, and deployment straightforward:
+
+```
+Washflow/
+├── backend/                         # Express API, Database, Worker, Payments
+│   ├── src/
+│   │   ├── routes/                  # Express route handlers
+│   │   │   ├── auth.ts              # Phone OTP send/verify, admin login, me, logout
+│   │   │   ├── bookings.ts          # Booking creation, list, detail, legal transitions
+│   │   │   ├── catalog.ts           # Customer active price catalog
+│   │   │   ├── payments.ts          # M-Pesa STK push, Daraja webhook callback, simulator
+│   │   │   ├── ratings.ts           # 1-5 star ratings & customer tips
+│   │   │   └── admin.ts             # Orders feed, catalog editor, customer moderation, CSV export, SSE
+│   │   ├── db/                      # Drizzle ORM schema, migrations, connection pool
+│   │   ├── lib/                     # Business logic: state machine, rate limiter, security, phone, notifications
+│   │   └── server.ts                # Standalone Express server entrypoint (Port 5000)
+│   ├── drizzle/                     # SQL schema migrations
+│   ├── scripts/                     # Seed script, BullMQ worker, QR generator
+│   ├── tests/                       # Vitest integration tests (auth, security, payments, state machine)
+│   ├── Dockerfile                   # Production container for backend service
+│   ├── package.json                 # Backend dependencies & scripts
+│   └── tsconfig.json
+│
+├── frontend/                        # Next.js 15 Client-Side Application
+│   ├── src/
+│   │   ├── app/                     # App Router pages & layouts
+│   │   │   ├── page.tsx             # High-converting landing & storefront hero
+│   │   │   ├── (auth)/login/        # Admin login with TOTP 2FA code
+│   │   │   ├── (customer)/
+│   │   │   │   ├── book/            # QR onboarding, phone OTP, price catalog stepper, GPS pin drop
+│   │   │   │   ├── track/[id]/      # Visual progress timeline & live M-Pesa pay prompt
+│   │   │   │   └── rate/[id]/       # 1-5 star ratings & staff tips
+│   │   │   ├── admin/
+│   │   │   │   ├── page.tsx         # Realtime SSE order feed, Web Audio chimes, Leaflet dispatch map
+│   │   │   │   └── catalog/         # Dynamic price catalog manager
+│   │   │   ├── globals.css          # Glassmorphism tokens & animations
+│   │   │   └── layout.tsx           # Root layout with video background & responsive navbar
+│   │   ├── components/              # Modular UI components (customer, admin, shared)
+│   │   ├── lib/                     # Client types, status metadata, formatting utilities
+│   │   └── hooks/                   # Client state hooks
+│   ├── public/                      # Posters, QR code assets, looping background videos
+│   ├── next.config.ts               # Next.js 15 config with API proxy rewrites to Backend (:5000)
+│   ├── tailwind.config.ts           # Glassmorphism design system
+│   ├── Dockerfile                   # Production container for frontend service
+│   ├── package.json                 # Frontend dependencies & scripts
+│   └── tsconfig.json
+│
+├── docker-compose.yml               # Multi-container orchestration (backend, frontend, worker, postgres, redis)
+├── package.json                     # Root workspace orchestration scripts
+└── README.md
+```
+
+---
+
 ## 🚀 Key Features
 
-### 👤 Customer Experience
+### 👤 Customer Experience (Frontend)
 - **Under 30-Second QR Onboarding**: Arrive directly from a physical poster (`/book?src=poster-<location>`), enter phone number, verify with 6-digit OTP, and receive a long-lived signed session. Returning customers skip straight to ordering.
 - **Interactive Geolocation & Pin Dropping**: HTML5 Geolocation (`Use My Location`), draggable Leaflet map pin, reverse-geocoding, and manual apartment/street fallback.
 - **Live Catalog & Quantity Stepper**: Dynamic pricing for everyday laundry baskets, duvet sizes (3x5, 4x6, 5x6, 6x6), and area/bath mats with instant subtotal calculation.
@@ -14,7 +70,7 @@ WashFlow is a full-stack, production-grade laundry service platform engineered f
 - **Live Order Tracking**: Visual progress bar tracking order transitions from `PENDING` through `DELIVERED`.
 - **Delivered Rating & Tip Flow**: 1–5 star interactive rating with prominent staff tips on 4+ star experiences.
 
-### 🛡️ Admin Operations
+### 🛡️ Admin Operations (Frontend & Backend)
 - **Realtime Live Feed & Sound Chime**: Server-Sent Events (SSE) push incoming orders to the admin dashboard instantly, with Web Audio API chime notifications.
 - **Interactive Pickup Map**: Plotted GPS pins with customer contact shortcuts ("📞 Call", "💬 WhatsApp") and one-tap status progression.
 - **Strict State Machine**: Legal forward status transitions enforced server-side (`PENDING -> CONFIRMED -> PICKED_UP -> WASHING -> READY -> OUT_FOR_DELIVERY -> DELIVERED`).
@@ -46,158 +102,49 @@ WashFlow is a full-stack, production-grade laundry service platform engineered f
 
 ---
 
-## 🛠️ Tech Stack
+## 🛠️ Quick Start & Running Locally
 
-- **Framework**: Next.js 15 (App Router, TypeScript strict)
-- **Runtime**: Node.js 20+
-- **Styling**: Tailwind CSS + shadcn/ui design tokens with a glassmorphism theme
-- **Database**: PostgreSQL with Drizzle ORM & SQL migrations
-- **Background Jobs**: BullMQ + Redis (with resilient asynchronous fallback outbox)
-- **Realtime Updates**: Server-Sent Events (SSE)
-- **Notifications**: In-App, WhatsApp Business Cloud API (Twilio fallback), Email (Resend)
-- **Payments**: Provider-abstracted interface (`PaymentProvider`) with M-Pesa Daraja STK Push implementation
-- **Maps**: Leaflet + OpenStreetMap
-- **Testing**: Vitest (Unit & Integration) + Playwright (E2E)
-
----
-
-## 📁 Repository Structure
-
-```
-Washflow/
-├── .env.example                     # Environment template
-├── .env.local                       # Local environment configuration
-├── docker-compose.yml               # Web, Worker, Postgres, Redis orchestration
-├── Dockerfile                       # Multi-stage production container
-├── drizzle.config.ts                # Drizzle kit configuration
-├── next.config.ts                   # Next.js 15 config with CSP & security headers
-├── package.json
-├── tailwind.config.ts               # Glassmorphism tokens & animations
-├── tsconfig.json
-├── drizzle/
-│   └── migrations/                  # Generated SQL schema migrations
-├── public/
-│   ├── posters/                     # Fallback posters & SVG graphics
-│   ├── qrcodes/                     # Generated poster QR codes & manifest.json
-│   └── videos/                      # Looping background video assets
-├── scripts/
-│   ├── generate-qr.ts               # QR generator script per poster location
-│   ├── generate-assets.ts           # Media asset generator
-│   ├── seed.ts                      # Admin user & price catalog seeder
-│   └── worker.ts                    # Standalone BullMQ notification worker
-├── src/
-│   ├── app/
-│   │   ├── (auth)/login/            # Admin credentials & TOTP 2FA login
-│   │   ├── (customer)/
-│   │   │   ├── book/                # QR onboarding, location picker, catalog
-│   │   │   ├── track/[id]/          # Live status timeline & M-Pesa STK trigger
-│   │   │   └── rate/[id]/           # 1-5 star ratings & staff tips
-│   │   ├── admin/
-│   │   │   ├── page.tsx             # Live orders feed, sound chimes, pickup map
-│   │   │   └── catalog/             # Admin price catalog editor
-│   │   ├── api/
-│   │   │   ├── auth/                # OTP send/verify, admin login, me, logout
-│   │   │   ├── bookings/            # Booking CRUD & legal status transitions
-│   │   │   ├── catalog/             # Public catalog endpoint
-│   │   │   ├── payments/mpesa/      # STK push, Daraja webhook, dev simulator
-│   │   │   ├── ratings/             # Rating submission endpoint
-│   │   │   └── admin/               # SSE stream, CSV export, customer blocking
-│   │   ├── layout.tsx
-│   │   └── page.tsx
-│   ├── components/
-│   │   ├── admin/                   # Sound notifier, Leaflet pickup map
-│   │   ├── customer/                # Catalog selector, location picker, sticky CTA
-│   │   └── shared/                  # Video background, navbar, glass card
-│   ├── db/
-│   │   ├── index.ts                 # PostgreSQL connection pool
-│   │   ├── schema.ts                # Drizzle ORM schema & entity definitions
-│   │   └── seed-data.ts             # Initial pricing catalog data
-│   └── lib/
-│       ├── env.ts                   # Zod environment validation
-│       ├── payments/                # PaymentProvider interface & Daraja client
-│       ├── notifications/           # BullMQ queue, WhatsApp API, Resend email
-│       ├── phone.ts                 # libphonenumber-js validation
-│       ├── rate-limiter.ts          # Sliding window rate limiter
-│       ├── sanitization.ts          # HTML tag stripping
-│       ├── security.ts              # Device fingerprinting & abuse limits
-│       ├── session.ts               # Cryptographic HMAC-SHA256 session cookies
-│       ├── sse.ts                   # Realtime SSE manager
-│       └── state-machine.ts         # Booking status legal transitions
-└── tests/
-    ├── auth-and-security.test.ts    # Phone, rate limiting, and session tests
-    ├── pricing-state-machine-payments.test.ts # State machine, catalog, M-Pesa tests
-    └── e2e-booking-flow.spec.ts     # Playwright QR -> Book -> Pay journey
-```
-
----
-
-## ⚡ Quick Start
-
-### 1. Prerequisites
-- Node.js 20+
-- PostgreSQL 16+ running locally or via Docker
-- Redis (Optional; the platform automatically falls back to PostgreSQL if Redis is not running)
-
-### 2. Setup Environment
+### 1. Start Services via Docker Compose
 ```bash
-cp .env.example .env.local
+docker compose up -d
 ```
+This boots:
+- PostgreSQL on `localhost:5432`
+- Redis on `localhost:6379`
+- WashFlow Backend on `http://localhost:5000`
+- WashFlow Frontend on `http://localhost:3000`
+- Background Notification Worker
 
-### 3. Install Dependencies
+### 2. Or Run Directly with Node
+
+**Backend (Port 5000):**
 ```bash
+cd backend
 npm install
-```
-
-### 4. Database Setup & Seeding
-```bash
-# Push database schema to PostgreSQL
 npm run db:push
-
-# Seed admin user and initial price catalog
 npm run db:seed
-```
-
-### 5. Generate Poster QR Codes
-Generate high-resolution printable QR codes for all poster marketing locations:
-```bash
-npm run qr:generate
-```
-Outputs SVG and PNG QR codes to `public/qrcodes/` with source tags (`poster-nairobi-cbd`, `poster-westlands`, etc.).
-
-### 6. Run Development Server
-```bash
 npm run dev
 ```
-Open [http://localhost:3000](http://localhost:3000) in your browser.
 
-- **Storefront & QR Booking**: [http://localhost:3000/book?src=poster-nairobi-cbd](http://localhost:3000/book?src=poster-nairobi-cbd)
-- **Admin Dashboard**: [http://localhost:3000/admin](http://localhost:3000/admin)
-  - Default Admin Email: `admin@washflow.co.ke`
-  - Default Admin Password: `WashFlow#Admin2026!Secure`
-
----
-
-## 🧪 Testing
-
-Run the automated test suite covering phone validation, HTML sanitization, cryptographic sessions, rate limiting, state machine transitions, dynamic pricing, and M-Pesa callbacks:
-
+**Frontend (Port 3000):**
 ```bash
-npm test
+cd frontend
+npm install
+npm run dev
 ```
 
-To run Playwright end-to-end tests:
+**Run Unit & Integration Tests:**
 ```bash
-npx playwright test tests/e2e-booking-flow.spec.ts
+npm run test --prefix backend
 ```
 
 ---
 
-## 🐳 Docker Deployment
+## 🔑 Demo & Admin Credentials
 
-To launch the complete production stack (Web app, standalone notification worker, PostgreSQL, and Redis):
-
-```bash
-docker compose up -d --build
-```
-
-Healthchecks verify PostgreSQL and Redis readiness before booting the web server and background workers.
+- **Admin Dashboard**: `http://localhost:3000/admin`
+- **Admin Login**: `http://localhost:3000/login`
+- **Email**: `admin@washflow.co.ke`
+- **Password**: `WashFlow#Admin2026!Secure`
+- **Customer Booking Flow**: `http://localhost:3000/book`
+- **Poster Demo Location**: `http://localhost:3000/book?src=poster-kilimani-01`

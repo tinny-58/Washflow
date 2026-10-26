@@ -1,0 +1,18 @@
+User-Agent: *
+Allow: /
+Allow: /prices
+Allow: /about
+Allow: /faq
+Allow: /contact
+Allow: /terms
+Allow: /privacy
+Disallow: /admin/
+Disallow: /client/
+Disallow: /dashboard/
+Disallow: /scan/
+Disallow: /track/
+Disallow: /rate/
+Disallow: /api/
+Disallow: /_next/
+
+Sitemap: http://localhost:3000/sitemap.xml

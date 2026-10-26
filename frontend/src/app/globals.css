@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* Navbar & Hero Layout Tokens */
+    --nav-h: 64px;
+    --hero-gap: 20px;
+    --hero-card-h: calc(100vh - var(--nav-h) - (2 * var(--hero-gap)));
+    --hero-card-h: calc(100dvh - var(--nav-h) - (2 * var(--hero-gap)));
+    --hero-card-min-h: 540px;
+    --hero-banner-h: clamp(200px, 30vh, 320px);
+    --hero-banner-h: clamp(200px, 30dvh, 320px);
+
+    /* Auth Card Design Tokens */
+    --auth-card-w: 470px;
+    --auth-card-h: clamp(480px, 50vh, 560px);
+    --auth-card-h: clamp(480px, 50dvh, 560px);
+    --auth-card-pad: 32px;
+    --auth-card-pad-mobile: 20px;
+    --auth-card-msg-h: 40px;
+
+    --background: 222 47% 11%;
+    --foreground: 210 40% 98%;
+
+    --card: 222 47% 11%;
+    --card-foreground: 210 40% 98%;
+
+    --popover: 222 47% 11%;
+    --popover-foreground: 210 40% 98%;
+
+    --primary: 199 89% 48%;
+    --primary-foreground: 210 40% 98%;
+
+    --secondary: 217 33% 17%;
+    --secondary-foreground: 210 40% 98%;
+
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 199 89% 48%;
+    --accent-foreground: 210 40% 98%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 210 40% 98%;
+
+    --border: 217 33% 25%;
+    --input: 217 33% 20%;
+    --ring: 199 89% 48%;
+
+    --radius: 1rem;
+  }
+}
+
+@layer utilities {
+  /* Auth Card Shell Design Token Class */
+  .auth-card-shell {
+    box-sizing: border-box;
+    width: min(var(--auth-card-w), calc(100vw - 32px));
+    height: var(--auth-card-h);
+    min-height: var(--auth-card-h);
+    max-height: var(--auth-card-h);
+    flex-shrink: 0;
+  }
+
+  /* Left Hero Card Layout Rules */
+  .hero-card {
+    position: relative;
+    width: 100%;
+    height: var(--hero-banner-h);
+    min-height: 200px;
+    max-height: 320px;
+    box-sizing: border-box;
+  }
+
+  @media (min-width: 1024px) {
+    .hero-card {
+      height: max(var(--hero-card-h), var(--hero-card-min-h));
+      min-height: var(--hero-card-min-h);
+      max-height: none;
+    }
+  }
+
+  .glass-panel {
+    background: rgba(15, 23, 42, 0.65);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.5);
+  }
+
+  .glass-card {
+    background: rgba(255, 255, 255, 0.08);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.3);
+  }
+
+  .glass-card-hover {
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  }
+
+  .glass-card-hover:hover {
+    background: rgba(255, 255, 255, 0.14);
+    border-color: rgba(56, 189, 248, 0.4);
+    transform: translateY(-2px);
+    box-shadow: 0 12px 36px 0 rgba(0, 0, 0, 0.4), 0 0 20px 0 rgba(56, 189, 248, 0.15);
+  }
+
+  .glass-input {
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    color: #ffffff;
+    backdrop-filter: blur(8px);
+  }
+
+  .glass-input:focus {
+    border-color: #38bdf8;
+    box-shadow: 0 0 0 2px rgba(56, 189, 248, 0.25);
+    outline: none;
+  }
+}
+
+/* Custom Scrollbar for sleek UI */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.5);
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.35);
+}
+
+@keyframes kenburns {
+  0% {
+    transform: scale(1.02) translate(0%, 0%);
+  }
+  50% {
+    transform: scale(1.08) translate(-1%, -0.5%);
+  }
+  100% {
+    transform: scale(1.02) translate(0%, 0%);
+  }
+}
+
+.animate-ken-burns {
+  animation: kenburns 35s ease-in-out infinite alternate;
+}
+
+@keyframes float-slow {
+  0%, 100% {
+    transform: translateY(0px);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+
+.animate-float {
+  animation: float-slow 6s ease-in-out infinite;
+}
+

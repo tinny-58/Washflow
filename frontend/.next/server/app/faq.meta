@@ -1,0 +1,15 @@
+{
+  "headers": {
+    "x-nextjs-stale-time": "300",
+    "x-nextjs-prerender": "1",
+    "x-next-cache-tags": "_N_T_/layout,_N_T_/faq/layout,_N_T_/faq/page,_N_T_/faq"
+  },
+  "routeCache": {
+    "key": "/route-cache/APP_PAGE/b5576171f5a4de964641656c739d9b311930e12763f3f0bb0492a1abf0416ba1/$/faq",
+    "owner": {
+      "kind": "APP_PAGE",
+      "sourceRoute": "/faq/page"
+    },
+    "isFallback": false
+  }
+}
