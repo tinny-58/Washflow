@@ -17,7 +17,10 @@ import adminCustomersRoutes from "./routes/admin-customers";
 import adminRewardsRoutes from "./routes/admin-rewards";
 import trackRateRoutes from "./routes/track-rate";
 import clientRoutes from "./routes/client";
+import claimsRoutes from "./routes/claims";
+import whatsappWebhookRoutes from "./routes/whatsapp-webhook";
 import { baileysService } from "./lib/baileys/baileys-service";
+import { cleanupExpiredHolds } from "./services/slot-service";
 
 const app = express();
 const port = env.PORT || 5000;
@@ -31,15 +34,40 @@ app.use(
   })
 );
 
+// Specific Allowed Origins for strict CORS compliance (No wildcard * with credentials)
+const allowedOrigins = Array.from(
+  new Set([
+    env.NEXT_PUBLIC_APP_URL,
+    "http://localhost:3000",
+    "http://127.0.0.1:3000",
+  ].filter(Boolean))
+);
+
 // Middleware
 app.use(
   cors({
-    origin: [env.NEXT_PUBLIC_APP_URL, "http://localhost:3000", "http://127.0.0.1:3000"],
+    origin: (requestOrigin, callback) => {
+      // Allow requests with no origin (mobile apps, server-to-server, curl, Postman)
+      if (!requestOrigin) return callback(null, true);
+      if (allowedOrigins.includes(requestOrigin)) {
+        return callback(null, true);
+      }
+      return callback(new Error(`Origin ${requestOrigin} not allowed by CORS`));
+    },
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization", "X-Requested-With"],
     credentials: true,
   })
 );
 app.use(cookieParser(env.SESSION_SECRET));
-app.use(express.json({ limit: "1mb" }));
+app.use(
+  express.json({
+    limit: "1mb",
+    verify: (req: any, _res, buf) => {
+      req.rawBody = buf;
+    },
+  })
+);
 app.use(express.urlencoded({ extended: true, limit: "1mb" }));
 
 // Healthcheck
@@ -48,12 +76,15 @@ app.get("/health", (_req, res) => {
 });
 
 // Mount API routes
+app.use("/api/whatsapp", whatsappWebhookRoutes);
 app.use("/api/auth", authRoutes);
 app.use("/api/catalog", catalogRoutes);
 app.use("/api/bookings", bookingsRoutes);
 app.use("/api/payments", paymentsRoutes);
 app.use("/api/ratings", ratingsRoutes);
 app.use("/api/client", clientRoutes);
+app.use("/api/claims", claimsRoutes);
+app.use("/api/client/claims", claimsRoutes);
 app.use("/api/admin/whatsapp/worker", adminWhatsappWorkerRoutes);
 app.use("/api/admin/whatsapp/automations", adminWhatsappAutomationsRoutes);
 app.use("/api/admin/whatsapp/logs", adminWhatsappLogsRoutes);
@@ -84,6 +115,13 @@ if (env.NODE_ENV !== "test") {
     baileysService.init().catch((err) => {
       console.warn("Baileys background initialization warning:", err.message);
     });
+
+    // Background sweeper for expired 10-minute slot holds
+    setInterval(() => {
+      cleanupExpiredHolds().catch((err) => {
+        console.error("Expired slot holds sweeper error:", err);
+      });
+    }, 60000);
   });
 }
 

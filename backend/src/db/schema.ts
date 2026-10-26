@@ -27,12 +27,16 @@ export const bookingStatusEnum = pgEnum("booking_status", [
   "DELIVERED",
   "CANCELLED",
 ]);
-export const paymentTypeEnum = pgEnum("payment_type", ["service", "tip"]);
+export const paymentTypeEnum = pgEnum("payment_type", ["service", "tip", "deposit", "balance", "refund"]);
 export const paymentStatusEnum = pgEnum("payment_status", ["PENDING", "COMPLETED", "FAILED"]);
 export const bookingPaymentStatusEnum = pgEnum("booking_payment_status", [
   "UNPAID",
   "PAID",
   "PAY_ON_DELIVERY",
+  "DEPOSIT_PAID",
+  "BALANCE_DUE",
+  "REFUNDED",
+  "PARTIALLY_REFUNDED",
 ]);
 export const notificationChannelEnum = pgEnum("notification_channel", ["app", "whatsapp", "email"]);
 export const notificationStatusEnum = pgEnum("notification_status", ["PENDING", "SENT", "FAILED"]);
@@ -67,6 +71,8 @@ export const users = pgTable(
     referralPoints: integer("referral_points").notNull().default(0),
     loyaltyPoints: integer("loyalty_points").notNull().default(0),
     rewardPointsBalance: integer("reward_points_balance").notNull().default(0),
+    whatsappBsuid: text("whatsapp_bsuid").unique(),
+    whatsappUsername: text("whatsapp_username"),
     whatsappNotifications: boolean("whatsapp_notifications").notNull().default(true),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -79,6 +85,7 @@ export const users = pgTable(
     uniqueIndex("users_single_admin_idx").on(table.role).where(sql`${table.role} = 'admin'`),
     uniqueIndex("users_google_sub_idx").on(table.googleSub),
     uniqueIndex("users_referral_code_idx").on(table.referralCode),
+    uniqueIndex("users_whatsapp_bsuid_idx").on(table.whatsappBsuid),
   ]
 );
 
@@ -206,17 +213,28 @@ export const payments = pgTable(
   {
     id: uuid("id").primaryKey().defaultRandom(),
     bookingId: uuid("booking_id").notNull().references(() => bookings.id),
-    type: paymentTypeEnum("type").notNull().default("service"), // service | tip
+    type: paymentTypeEnum("type").notNull().default("service"), // service | tip | deposit | balance | refund
     provider: text("provider").notNull().default("mpesa"), // mpesa | cash | stripe
     providerRef: text("provider_ref").notNull().unique(), // Daraja CheckoutRequestID or Transaction ID
     amount: integer("amount").notNull(),
+    amountMinor: integer("amount_minor").notNull().default(0),
     status: paymentStatusEnum("status").notNull().default("PENDING"),
+    mpesaReceiptNumber: text("mpesa_receipt_number"),
+    checkoutRequestId: text("checkout_request_id"),
+    merchantRequestId: text("merchant_request_id"),
+    phoneMasked: text("phone_masked"),
+    idempotencyKey: text("idempotency_key"),
+    resultCode: integer("result_code"),
+    resultDesc: text("result_desc"),
     rawCallbackJson: jsonb("raw_callback_json"),
+    meta: jsonb("meta"),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     index("payments_booking_idx").on(table.bookingId),
     uniqueIndex("payments_provider_ref_idx").on(table.providerRef),
+    index("payments_created_at_idx").on(table.createdAt),
+    index("payments_status_idx").on(table.status),
   ]
 );
 
@@ -849,7 +867,7 @@ export const programSettings = pgTable(
     loyaltyPointsExpiryMonths: integer("loyalty_points_expiry_months").notNull().default(12),
     refereeWelcomeDiscountActive: boolean("referee_welcome_discount_active").notNull().default(false),
     refereeWelcomeDiscountKes: integer("referee_welcome_discount_kes").notNull().default(0),
-    adminAlertPhone: text("admin_alert_phone").default("+254706351077"),
+    adminAlertPhone: text("admin_alert_phone").default("+254700000000"),
     autoApproveLowRisk: boolean("auto_approve_low_risk").notNull().default(false),
     whatsappTemplateReferralShare: text("whatsapp_template_referral_share"),
     activeFrom: timestamp("active_from", { withTimezone: true }).notNull().defaultNow(),
@@ -1014,6 +1032,73 @@ export const slotHolds = pgTable(
   ]
 );
 
+// 23. claims
+export const claims = pgTable(
+  "claims",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    claimNumber: text("claim_number").notNull().unique(),
+    clientId: uuid("client_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    bookingId: uuid("booking_id").notNull().references(() => bookings.id, { onDelete: "cascade" }),
+    issueType: text("issue_type").notNull(),
+    description: text("description").notNull(),
+    status: text("status").notNull().default("open"), // open | in_review | resolved | rejected | reopened | closed
+    photos: jsonb("photos").notNull().default([]),
+    resolutionType: text("resolution_type"), // redo_wash | voucher | refund | rejected
+    resolutionNotes: text("resolution_notes"),
+    refundReference: text("refund_reference"),
+    voucherId: uuid("voucher_id").references(() => vouchers.id, { onDelete: "set null" }),
+    assignedTo: uuid("assigned_to").references(() => users.id, { onDelete: "set null" }),
+    slaFirstResponseDueAt: timestamp("sla_first_response_due_at", { withTimezone: true }).notNull(),
+    slaResolutionDueAt: timestamp("sla_resolution_due_at", { withTimezone: true }).notNull(),
+    firstResponseAt: timestamp("first_response_at", { withTimezone: true }),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
+    reopenedAt: timestamp("reopened_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("claims_client_status_idx").on(table.clientId, table.status),
+    index("claims_booking_idx").on(table.bookingId),
+    index("claims_sla_urgency_idx").on(table.status, table.slaFirstResponseDueAt),
+    index("claims_created_at_idx").on(table.createdAt),
+  ]
+);
+
+// 24. claim_items
+export const claimItems = pgTable(
+  "claim_items",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    claimId: uuid("claim_id").notNull().references(() => claims.id, { onDelete: "cascade" }),
+    bookingItemId: uuid("booking_item_id").references(() => bookingItems.id, { onDelete: "set null" }),
+    itemVariant: text("item_variant").notNull(),
+    qtyAffected: integer("qty_affected").notNull().default(1),
+    notes: text("notes"),
+  },
+  (table) => [
+    index("claim_items_claim_idx").on(table.claimId),
+  ]
+);
+
+// 25. claim_messages
+export const claimMessages = pgTable(
+  "claim_messages",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    claimId: uuid("claim_id").notNull().references(() => claims.id, { onDelete: "cascade" }),
+    senderId: uuid("sender_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    senderRole: text("sender_role").notNull(), // client | admin
+    message: text("message").notNull(),
+    isInternalNote: boolean("is_internal_note").notNull().default(false),
+    attachments: jsonb("attachments").notNull().default([]),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("claim_messages_claim_idx").on(table.claimId, table.createdAt),
+  ]
+);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   bookings: many(bookings),
@@ -1108,6 +1193,113 @@ export const bookingsRelations = relations(bookings, ({ one, many }) => ({
   payments: many(payments),
   rating: one(ratings),
   notifications: many(notifications),
+  series: one(bookingSeries, {
+    fields: [bookings.seriesId],
+    references: [bookingSeries.id],
+  }),
+  occurrence: one(bookingOccurrences, {
+    fields: [bookings.occurrenceId],
+    references: [bookingOccurrences.id],
+  }),
+}));
+
+export const bookingSeriesRelations = relations(bookingSeries, ({ one, many }) => ({
+  client: one(users, {
+    fields: [bookingSeries.clientId],
+    references: [users.id],
+  }),
+  address: one(addresses, {
+    fields: [bookingSeries.addressId],
+    references: [addresses.id],
+  }),
+  occurrences: many(bookingOccurrences),
+  bookings: many(bookings),
+}));
+
+export const bookingOccurrencesRelations = relations(bookingOccurrences, ({ one }) => ({
+  series: one(bookingSeries, {
+    fields: [bookingOccurrences.seriesId],
+    references: [bookingSeries.id],
+  }),
+  client: one(users, {
+    fields: [bookingOccurrences.clientId],
+    references: [users.id],
+  }),
+  slot: one(slotCapacity, {
+    fields: [bookingOccurrences.slotId],
+    references: [slotCapacity.id],
+  }),
+  booking: one(bookings, {
+    fields: [bookingOccurrences.bookingId],
+    references: [bookings.id],
+  }),
+}));
+
+export const slotCapacityRelations = relations(slotCapacity, ({ many }) => ({
+  holds: many(slotHolds),
+  occurrences: many(bookingOccurrences),
+}));
+
+export const slotHoldsRelations = relations(slotHolds, ({ one }) => ({
+  slot: one(slotCapacity, {
+    fields: [slotHolds.slotId],
+    references: [slotCapacity.id],
+  }),
+  client: one(users, {
+    fields: [slotHolds.clientId],
+    references: [users.id],
+  }),
+  series: one(bookingSeries, {
+    fields: [slotHolds.seriesId],
+    references: [bookingSeries.id],
+  }),
+  booking: one(bookings, {
+    fields: [slotHolds.bookingId],
+    references: [bookings.id],
+  }),
+}));
+
+export const claimsRelations = relations(claims, ({ one, many }) => ({
+  client: one(users, {
+    fields: [claims.clientId],
+    references: [users.id],
+  }),
+  booking: one(bookings, {
+    fields: [claims.bookingId],
+    references: [bookings.id],
+  }),
+  voucher: one(vouchers, {
+    fields: [claims.voucherId],
+    references: [vouchers.id],
+  }),
+  assignedStaff: one(users, {
+    fields: [claims.assignedTo],
+    references: [users.id],
+  }),
+  items: many(claimItems),
+  messages: many(claimMessages),
+}));
+
+export const claimItemsRelations = relations(claimItems, ({ one }) => ({
+  claim: one(claims, {
+    fields: [claimItems.claimId],
+    references: [claims.id],
+  }),
+  bookingItem: one(bookingItems, {
+    fields: [claimItems.bookingItemId],
+    references: [bookingItems.id],
+  }),
+}));
+
+export const claimMessagesRelations = relations(claimMessages, ({ one }) => ({
+  claim: one(claims, {
+    fields: [claimMessages.claimId],
+    references: [claims.id],
+  }),
+  sender: one(users, {
+    fields: [claimMessages.senderId],
+    references: [users.id],
+  }),
 }));
 
 export const bookingItemsRelations = relations(bookingItems, ({ one }) => ({
@@ -1252,3 +1444,19 @@ export type RewardEntitlement = typeof rewardEntitlements.$inferSelect;
 export type NewRewardEntitlement = typeof rewardEntitlements.$inferInsert;
 export type ProgramAuditLogEntry = typeof programAuditLog.$inferSelect;
 export type NewProgramAuditLogEntry = typeof programAuditLog.$inferInsert;
+export type SystemSettings = typeof systemSettings.$inferSelect;
+export type NewSystemSettings = typeof systemSettings.$inferInsert;
+export type SlotCapacity = typeof slotCapacity.$inferSelect;
+export type NewSlotCapacity = typeof slotCapacity.$inferInsert;
+export type BookingSeries = typeof bookingSeries.$inferSelect;
+export type NewBookingSeries = typeof bookingSeries.$inferInsert;
+export type BookingOccurrence = typeof bookingOccurrences.$inferSelect;
+export type NewBookingOccurrence = typeof bookingOccurrences.$inferInsert;
+export type SlotHold = typeof slotHolds.$inferSelect;
+export type NewSlotHold = typeof slotHolds.$inferInsert;
+export type Claim = typeof claims.$inferSelect;
+export type NewClaim = typeof claims.$inferInsert;
+export type ClaimItem = typeof claimItems.$inferSelect;
+export type NewClaimItem = typeof claimItems.$inferInsert;
+export type ClaimMessage = typeof claimMessages.$inferSelect;
+export type NewClaimMessage = typeof claimMessages.$inferInsert;
