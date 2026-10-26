@@ -18,7 +18,7 @@ import { getSessionFromReq } from "../lib/session";
 import { checkRateLimit } from "../lib/rate-limiter";
 import { broadcastAdminEvent } from "../lib/sse";
 import { normalizePhone } from "../lib/phone";
-import { baileysService } from "../lib/baileys/baileys-service";
+import { customerMessaging, sendCustomerMessage, CustomerMessageTemplate } from "../services/customer-messaging";
 import crypto from "crypto";
 
 const router = Router();
@@ -258,6 +258,68 @@ router.post("/:id/toggle-status", async (req: Request, res: Response) => {
     });
   } catch (err: any) {
     return res.status(500).json({ error: "Failed to update customer status." });
+  }
+});
+
+// 3b. POST /:id/message - Send customer message from admin console using OTF Washflow identity
+router.post("/:id/message", async (req: Request, res: Response) => {
+  const session = (req as any).session;
+  const customerId = req.params.id;
+  const { message, templateName, variables } = req.body || {};
+
+  try {
+    const customer = await db.query.users.findFirst({
+      where: eq(users.id, customerId),
+    });
+
+    if (!customer) {
+      return res.status(404).json({ error: "Customer not found." });
+    }
+
+    if (!customer.phoneE164 && !customer.phone && !customer.whatsappBsuid) {
+      return res.status(400).json({ error: "Customer has no phone number or WhatsApp ID." });
+    }
+
+    let result;
+    if (templateName) {
+      result = await sendCustomerMessage({
+        recipientPhone: customer.phoneE164 || customer.phone || undefined,
+        recipientBsuid: customer.whatsappBsuid || undefined,
+        templateName,
+        variables: variables || {},
+        purpose: "admin_manual_message",
+      });
+    } else if (message) {
+      result = await customerMessaging.sendCustomerSupportText({
+        recipientPhone: customer.phoneE164 || customer.phone || undefined,
+        recipientBsuid: customer.whatsappBsuid || undefined,
+        messageText: message,
+        purpose: "admin_manual_message",
+      });
+    } else {
+      return res.status(400).json({ error: "Either message text or templateName is required." });
+    }
+
+    await db.insert(auditLog).values({
+      actorId: session.userId,
+      action: "CUSTOMER_MESSAGE_SENT",
+      entity: "users",
+      entityId: customer.id,
+      meta: {
+        adminUsername: session.username,
+        templateName: templateName || null,
+        success: result.success,
+      },
+    });
+
+    return res.json({
+      success: result.success,
+      messageId: result.providerMessageId,
+      message: result.success ? "Message dispatched to customer via OTF Washflow." : result.error,
+    });
+  } catch (err: any) {
+    console.error("Failed to send customer message:", err);
+    return res.status(500).json({ error: "Failed to dispatch message to customer." });
   }
 });
 

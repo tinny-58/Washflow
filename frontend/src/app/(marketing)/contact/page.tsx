@@ -13,19 +13,22 @@ import {
 import { GlassCard } from "@/components/shared/glass-card";
 
 export const metadata: Metadata = {
-  title: "Contact & Support | WashFlow Kenya",
+  title: "Contact & Support | OTF Washflow",
   description:
-    "Get in touch with WashFlow Kenya. Reach our Nairobi dispatch and customer care team via WhatsApp, phone, or email for laundry orders, pickups, and inquiries.",
+    "Get in touch with OTF Washflow. Reach our Embu dispatch and customer care team via WhatsApp, phone, or email for laundry orders, pickups, and inquiries.",
   openGraph: {
-    title: "Contact WashFlow Kenya | Doorstep Laundry Customer Care",
+    title: "Contact OTF Washflow | Doorstep Laundry Customer Care",
     description:
-      "Support and inquiries for doorstep laundry pickup and delivery in Nairobi.",
+      "Support and inquiries for doorstep laundry pickup and delivery in Embu, Kenya.",
     url: "/contact",
     type: "website",
   },
 };
 
 export default function ContactPage() {
+  const businessPhone = process.env.NEXT_PUBLIC_OTF_BUSINESS_PHONE || "+254700000000";
+  const businessWaDigits = businessPhone.replace(/\D/g, "");
+
   return (
     <div className="w-full flex-1 pb-16">
       {/* Hero Section */}
@@ -42,7 +45,7 @@ export default function ContactPage() {
 
           <p className="max-w-2xl mx-auto text-sm sm:text-base text-slate-300 leading-relaxed font-normal">
             Need to reschedule a pickup, ask about catalog prices, or track an active laundry order?
-            Our Nairobi support team is ready to assist.
+            Our OTF Washflow Embu support team is ready to assist.
           </p>
         </div>
       </section>
@@ -57,19 +60,19 @@ export default function ContactPage() {
               <div className="w-11 h-11 rounded-2xl bg-emerald-500/20 text-emerald-400 flex items-center justify-center">
                 <MessageSquare className="w-5 h-5 text-emerald-400" />
               </div>
-              <h3 className="text-base font-bold text-white">WhatsApp Care</h3>
+              <h3 className="text-base font-bold text-white">WhatsApp Care (@otfwashflow)</h3>
               <p className="text-xs text-slate-300 leading-relaxed">
                 Fastest support channel for location pins, order status changes, and quick inquiries.
               </p>
             </div>
             <a
-              href="https://wa.me/254700000000"
+              href={`https://wa.me/${businessWaDigits}`}
               target="_blank"
               rel="noopener noreferrer"
               className="w-full py-2.5 px-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-bold transition flex items-center justify-center gap-2 min-h-[44px]"
             >
               <MessageSquare className="w-4 h-4" />
-              <span>Chat on WhatsApp</span>
+              <span>Chat with OTF Washflow</span>
             </a>
           </GlassCard>
 
@@ -85,11 +88,11 @@ export default function ContactPage() {
               </p>
             </div>
             <a
-              href="tel:+254700000000"
+              href={`tel:${businessPhone}`}
               className="w-full py-2.5 px-4 rounded-xl bg-white/10 hover:bg-white/15 text-white text-xs font-bold transition flex items-center justify-center gap-2 min-h-[44px]"
             >
               <Phone className="w-4 h-4" />
-              <span>Call Dispatch</span>
+              <span>Call Dispatch ({businessPhone})</span>
             </a>
           </GlassCard>
 
@@ -131,11 +134,11 @@ export default function ContactPage() {
           <div className="space-y-2">
             <div className="flex items-center gap-2 text-white font-bold text-sm">
               <MapPin className="w-4 h-4 text-emerald-400" />
-              <span>Coverage Area</span>
+              <span>Coverage Area (Embu Hub)</span>
             </div>
             <p className="text-xs text-slate-300 leading-relaxed">
-              Direct doorstep collection and delivery serving Kilimani, Kileleshwa, Westlands,
-              Lavington, Riverside, Parklands, South B/C, and greater Nairobi.
+              Direct doorstep collection and delivery serving Embu Town, Majengo, Dallas, Blue Valley,
+              Kangaru, Kamiu, and greater Embu County.
             </p>
           </div>
         </section>

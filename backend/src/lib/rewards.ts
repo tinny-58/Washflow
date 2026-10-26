@@ -414,7 +414,7 @@ export async function evaluateOrderQualification(
       loyalty_points_per_paid_order: 10,
       standard_reward_milestone_points: 500,
       exclusive_reward_milestone_points: 1000,
-      admin_alert_phone: "+254706351077",
+      admin_alert_phone: env.ADMIN_NOTIFY_PHONE || env.ADMIN_PHONE || "+254700000000",
     };
 
     if (settings.program_active === false) {

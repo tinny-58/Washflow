@@ -18,11 +18,11 @@ export function Footer() {
                 <Waves className="w-5 h-5 text-white" />
               </div>
               <span className="font-black text-lg tracking-tight bg-gradient-to-r from-white via-slate-100 to-sky-300 bg-clip-text text-transparent">
-                WashFlow
+                OTF Washflow
               </span>
             </Link>
             <p className="text-xs text-slate-300 leading-relaxed font-normal">
-              Fast, fresh & hygienic doorstep laundry care across Nairobi. Everyday clothes, bedding duvets & floor mats.
+              Fast, fresh & hygienic doorstep laundry care across Embu. Everyday clothes, bedding duvets & floor mats.
             </p>
             <div className="flex items-center gap-2 text-xs text-emerald-400 font-semibold pt-1 min-h-[44px]">
               <ShieldCheck className="w-4 h-4 text-emerald-400 shrink-0" />
@@ -119,7 +119,7 @@ export function Footer() {
 
         {/* Bottom Bar */}
         <div className="pt-6 border-t border-white/10 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-slate-400">
-          <p>© {currentYear} WashFlow Kenya. All rights reserved. Final order pricing confirmed at booking.</p>
+          <p>© {currentYear} OTF Washflow. All rights reserved. Final order pricing confirmed at booking.</p>
           <div className="flex flex-wrap items-center gap-4 text-slate-300">
             <Link href="/terms" className="hover:text-white transition-colors min-h-[44px] inline-flex items-center">Terms</Link>
             <span className="text-slate-600">•</span>

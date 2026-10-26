@@ -22,6 +22,7 @@ import { getClientIpHash } from "../lib/security";
 import { sanitizeText } from "../lib/sanitization";
 import { sendClientEvent, broadcastAdminEvent } from "../lib/sse";
 import { approveRewardEntitlement } from "../lib/rewards";
+import { env } from "../lib/env";
 import { eq, desc, sql, and, inArray, or } from "drizzle-orm";
 
 const router = Router();
@@ -230,7 +231,7 @@ router.get("/overview", requireAdmin, async (_req: Request, res: Response) => {
         smallBasketPriceKes: 300,
         voucherValidityDays: 90,
         holdWindowHours: 0,
-        adminAlertPhone: "+254706351077",
+        adminAlertPhone: env.ADMIN_NOTIFY_PHONE || env.ADMIN_PHONE || "+254700000000",
       },
     });
   } catch (error) {
@@ -718,7 +719,7 @@ const updateSettingsSchema = z.object({
   loyaltyPointsExpiryMonths: z.number().int().min(1).max(36).default(12),
   refereeWelcomeDiscountActive: z.boolean().default(false),
   refereeWelcomeDiscountKes: z.number().int().min(0).max(5000).default(0),
-  adminAlertPhone: z.string().default("+254706351077"),
+  adminAlertPhone: z.string().default(env.ADMIN_NOTIFY_PHONE || env.ADMIN_PHONE || "+254700000000"),
   autoApproveLowRisk: z.boolean().default(false),
 });
 

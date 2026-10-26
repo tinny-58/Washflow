@@ -19,10 +19,10 @@ export interface HeroContentConfig {
 export const SITE_HERO_CONFIG: HeroContentConfig = {
   // Primary customer promises:
   headline: "24h Doorstep Delivery",
-  subline: "Sealed tamper-evident return across Nairobi within 24 hours.",
-  badge: "Fast & Crisp Laundry Nairobi",
+  subline: "Sealed tamper-evident return across Embu within 24 hours.",
+  badge: "Fast & Crisp Laundry Embu",
   imageAlt: "", // Marked decorative because adjacent text fully describes the service
   turnaroundHours: 24,
-  coverageArea: "Nairobi",
+  coverageArea: "Embu",
   packagingType: "Sealed tamper-evident return packaging",
 };

@@ -44,7 +44,7 @@ export default function LoginPage() {
           <Waves className="w-7 h-7 text-white" />
         </div>
         <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-          Welcome to <span className="bg-gradient-to-r from-white via-sky-100 to-sky-400 bg-clip-text text-transparent">WashFlow</span>
+          Welcome to <span className="bg-gradient-to-r from-white via-sky-100 to-sky-400 bg-clip-text text-transparent">OTF Washflow</span>
         </h1>
         <p className="text-xs sm:text-sm text-slate-300 max-w-sm mx-auto">
           Sign in with your username, or create an account with WhatsApp or Google.
