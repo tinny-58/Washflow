@@ -894,6 +894,126 @@ export const clientEncryptionKeys = pgTable(
   }
 );
 
+// 18. system_settings (Phase 0 confirmed operational thresholds)
+export const systemSettings = pgTable(
+  "system_settings",
+  {
+    id: integer("id").primaryKey().default(1),
+    version: integer("version").notNull().default(1),
+    bookingDepositMinor: integer("booking_deposit_minor").notNull().default(5000),
+    cancellationCutoffMinutes: integer("cancellation_cutoff_minutes").notNull().default(120),
+    recurringMaxHorizonDays: integer("recurring_max_horizon_days").notNull().default(90),
+    recurringMaxOccurrences: integer("recurring_max_occurrences").notNull().default(12),
+    defaultWindowCapacity: integer("default_window_capacity").notNull().default(10),
+    minLeadTimeHours: integer("min_lead_time_hours").notNull().default(3),
+    windowBookingCutoffHours: integer("window_booking_cutoff_hours").notNull().default(1),
+    slotHoldDurationMinutes: integer("slot_hold_duration_minutes").notNull().default(10),
+    maxConcurrentUnpaidHolds: integer("max_concurrent_unpaid_holds").notNull().default(2),
+    claimWindowHours: integer("claim_window_hours").notNull().default(72),
+    claimSlaFirstResponseHours: integer("claim_sla_first_response_hours").notNull().default(24),
+    claimSlaResolutionHours: integer("claim_sla_resolution_hours").notNull().default(48),
+    usernameChangeCooldownDays: integer("username_change_cooldown_days").notNull().default(60),
+    closedDaysOfWeek: jsonb("closed_days_of_week").notNull().default([0]),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  }
+);
+
+// 19. slot_capacity (Live availability and capacity tracking per date/window)
+export const slotCapacity = pgTable(
+  "slot_capacity",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    date: text("date").notNull(),
+    windowId: text("window_id").notNull(),
+    windowLabel: text("window_label").notNull(),
+    capacity: integer("capacity").notNull().default(10),
+    reserved: integer("reserved").notNull().default(0),
+    held: integer("held").notNull().default(0),
+    status: text("status").notNull().default("available"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("slot_capacity_date_window_unique").on(table.date, table.windowId),
+    index("slot_capacity_date_idx").on(table.date),
+    index("slot_capacity_status_idx").on(table.status),
+  ]
+);
+
+// 20. booking_series (Series definitions for recurring orders)
+export const bookingSeries = pgTable(
+  "booking_series",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    clientId: uuid("client_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    addressId: uuid("address_id").notNull().references(() => addresses.id),
+    frequency: text("frequency").notNull(), // one_time | weekly | monthly | custom
+    rule: jsonb("rule").notNull(),
+    catalogVersion: integer("catalog_version").notNull().default(1),
+    totalOccurrences: integer("total_occurrences").notNull().default(1),
+    status: text("status").notNull().default("active"), // active | completed | cancelled
+    notes: text("notes"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    index("booking_series_client_idx").on(table.clientId, table.status),
+  ]
+);
+
+// 21. booking_occurrences (Individual schedule occurrences of a series)
+export const bookingOccurrences = pgTable(
+  "booking_occurrences",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    seriesId: uuid("series_id").notNull().references(() => bookingSeries.id, { onDelete: "cascade" }),
+    clientId: uuid("client_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    occurrenceIndex: integer("occurrence_index").notNull().default(1),
+    occurrenceDate: text("occurrence_date").notNull(),
+    windowId: text("window_id").notNull(),
+    slotId: uuid("slot_id").references(() => slotCapacity.id, { onDelete: "set null" }),
+    bookingId: uuid("booking_id").references(() => bookings.id, { onDelete: "set null" }),
+    status: text("status").notNull().default("scheduled"), // scheduled | held | awaiting_deposit | confirmed | completed | skipped | cancelled | lapsed
+    depositAmountMinor: integer("deposit_amount_minor").notNull().default(5000),
+    depositPaid: boolean("deposit_paid").notNull().default(false),
+    depositPaidAt: timestamp("deposit_paid_at", { withTimezone: true }),
+    priceLockedMinor: integer("price_locked_minor").notNull(),
+    catalogSnapshot: jsonb("catalog_snapshot").notNull(),
+    reminded48hAt: timestamp("reminded_48h_at", { withTimezone: true }),
+    reminded24hAt: timestamp("reminded_24h_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("booking_occurrences_series_date_unique").on(table.seriesId, table.occurrenceDate),
+    index("booking_occurrences_client_idx").on(table.clientId, table.status),
+    index("booking_occurrences_date_idx").on(table.occurrenceDate, table.status),
+  ]
+);
+
+// 22. slot_holds (Atomic 10-minute slot holds before deposit payment)
+export const slotHolds = pgTable(
+  "slot_holds",
+  {
+    id: uuid("id").primaryKey().defaultRandom(),
+    slotId: uuid("slot_id").notNull().references(() => slotCapacity.id, { onDelete: "cascade" }),
+    clientId: uuid("client_id").notNull().references(() => users.id, { onDelete: "cascade" }),
+    seriesId: uuid("series_id").references(() => bookingSeries.id, { onDelete: "set null" }),
+    occurrenceDate: text("occurrence_date").notNull(),
+    windowId: text("window_id").notNull(),
+    status: text("status").notNull().default("held"), // held | confirmed | released | expired
+    heldAt: timestamp("held_at", { withTimezone: true }).notNull().defaultNow(),
+    expiresAt: timestamp("expires_at", { withTimezone: true }).notNull(),
+    releasedAt: timestamp("released_at", { withTimezone: true }),
+    confirmedAt: timestamp("confirmed_at", { withTimezone: true }),
+    bookingId: uuid("booking_id").references(() => bookings.id, { onDelete: "set null" }),
+  },
+  (table) => [
+    index("slot_holds_client_active_idx").on(table.clientId, table.status, table.expiresAt),
+    index("slot_holds_slot_idx").on(table.slotId, table.status),
+  ]
+);
+
 // Relations
 export const usersRelations = relations(users, ({ many }) => ({
   bookings: many(bookings),
