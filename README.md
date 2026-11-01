@@ -148,3 +148,5 @@ npm run test --prefix backend
 - **Password**: `WashFlow#Admin2026!Secure`
 - **Customer Booking Flow**: `http://localhost:3000/book`
 - **Poster Demo Location**: `http://localhost:3000/book?src=poster-kilimani-01`
+#   W a s h f l o w  
+ 
